@@ -7,6 +7,10 @@ import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
 import Customers from './pages/Customers';
 import FleetApprovals from './pages/FleetApprovals';
+import Inventory from './pages/Inventory';
+import Payments from './pages/Payments';
+import Reports from './pages/Reports';
+import Technicians from './pages/Technicians';
 import Layout from './components/Layout';
 import "./App.css";
 
@@ -32,6 +36,10 @@ function App() {
             <Route path="/work-orders" element={<WorkOrders />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/approvals" element={<FleetApprovals />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/technicians" element={<Technicians />} />
           </Route>
         </Routes>
         <Toaster />

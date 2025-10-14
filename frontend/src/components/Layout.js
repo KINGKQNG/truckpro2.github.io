@@ -19,7 +19,11 @@ const Layout = () => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'service_manager', 'technician'] },
     { path: '/work-orders', icon: Wrench, label: 'Work Orders', roles: ['admin', 'service_manager', 'technician'] },
+    { path: '/technicians', icon: User, label: 'Technicians', roles: ['admin', 'service_manager'] },
     { path: '/customers', icon: Users, label: 'Customers', roles: ['admin', 'service_manager'] },
+    { path: '/inventory', icon: Menu, label: 'Inventory', roles: ['admin', 'service_manager'] },
+    { path: '/payments', icon: LogOut, label: 'Payments', roles: ['admin', 'service_manager'] },
+    { path: '/reports', icon: LayoutDashboard, label: 'Reports', roles: ['admin', 'service_manager'] },
     { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] }
   ];
 

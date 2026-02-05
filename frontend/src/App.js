@@ -11,6 +11,8 @@ import Inventory from './pages/Inventory';
 import Payments from './pages/Payments';
 import Reports from './pages/Reports';
 import Technicians from './pages/Technicians';
+import AdminPanel from './pages/AdminPanel';
+import IntegrationsPage from './pages/IntegrationsPage';
 import Layout from './components/Layout';
 import "./App.css";
 
@@ -40,6 +42,8 @@ function App() {
             <Route path="/payments" element={<Payments />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/technicians" element={<Technicians />} />
+            <Route path="/admin-panel" element={<AdminPanel />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
           </Route>
         </Routes>
         <Toaster />

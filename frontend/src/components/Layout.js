@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
-import { LayoutDashboard, Wrench, Users, CheckSquare, LogOut, Truck, Menu, User, Package, CreditCard, BarChart3, Shield, Plug, Camera, Scan, Calendar, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Wrench, Users, CheckSquare, LogOut, Truck, Menu, User, Package, CreditCard, BarChart3, Shield, Plug, Camera, Scan, Calendar, ClipboardList, Target, FileBarChart } from 'lucide-react';
 import { useState } from 'react';
 
 const Layout = () => {

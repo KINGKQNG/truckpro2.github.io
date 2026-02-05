@@ -17,14 +17,16 @@ const Layout = () => {
   };
 
   const menuItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'service_manager', 'technician'] },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'service_manager', 'technician', 'fleet_manager', 'customer'] },
     { path: '/work-orders', icon: Wrench, label: 'Work Orders', roles: ['admin', 'service_manager', 'technician'] },
     { path: '/technicians', icon: User, label: 'Technicians', roles: ['admin', 'service_manager'] },
     { path: '/customers', icon: Users, label: 'Customers', roles: ['admin', 'service_manager'] },
     { path: '/inventory', icon: Package, label: 'Inventory', roles: ['admin', 'service_manager'] },
     { path: '/payments', icon: CreditCard, label: 'Payments', roles: ['admin', 'service_manager'] },
     { path: '/reports', icon: BarChart3, label: 'Reports', roles: ['admin', 'service_manager'] },
-    { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] }
+    { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] },
+    { path: '/admin-panel', icon: CheckSquare, label: 'Admin Panel', roles: ['admin'] },
+    { path: '/integrations', icon: CheckSquare, label: 'Integrations', roles: ['admin'] }
   ];
 
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));

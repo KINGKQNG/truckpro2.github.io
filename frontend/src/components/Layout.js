@@ -19,6 +19,10 @@ const Layout = () => {
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'service_manager', 'technician', 'fleet_manager', 'customer'] },
     { path: '/work-orders', icon: Wrench, label: 'Work Orders', roles: ['admin', 'service_manager', 'technician'] },
+    { path: '/service-lane/walk-around', icon: Camera, label: 'Walk-Around', roles: ['admin', 'service_manager', 'technician'] },
+    { path: '/service-lane/obd-scanner', icon: Scan, label: 'OBD Scanner', roles: ['admin', 'service_manager', 'technician'] },
+    { path: '/service-lane/scheduler', icon: Calendar, label: 'Online Scheduler', roles: ['admin', 'service_manager'] },
+    { path: '/service-lane/shop-management', icon: ClipboardList, label: 'Shop Management', roles: ['admin', 'service_manager'] },
     { path: '/technicians', icon: User, label: 'Technicians', roles: ['admin', 'service_manager'] },
     { path: '/customers', icon: Users, label: 'Customers', roles: ['admin', 'service_manager'] },
     { path: '/inventory', icon: Package, label: 'Inventory', roles: ['admin', 'service_manager'] },

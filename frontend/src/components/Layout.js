@@ -18,6 +18,7 @@ const Layout = () => {
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'service_manager', 'technician', 'fleet_manager', 'customer'] },
+    { path: '/crm/leads', icon: Target, label: 'Lead Management', roles: ['admin', 'service_manager'] },
     { path: '/work-orders', icon: Wrench, label: 'Work Orders', roles: ['admin', 'service_manager', 'technician'] },
     { path: '/service-lane/walk-around', icon: Camera, label: 'Walk-Around', roles: ['admin', 'service_manager', 'technician'] },
     { path: '/service-lane/obd-scanner', icon: Scan, label: 'OBD Scanner', roles: ['admin', 'service_manager', 'technician'] },
@@ -28,6 +29,7 @@ const Layout = () => {
     { path: '/inventory', icon: Package, label: 'Inventory', roles: ['admin', 'service_manager'] },
     { path: '/payments', icon: CreditCard, label: 'Payments', roles: ['admin', 'service_manager'] },
     { path: '/reports', icon: BarChart3, label: 'Reports', roles: ['admin', 'service_manager'] },
+    { path: '/advanced-reporting', icon: FileBarChart, label: 'SAP Controlling', roles: ['admin', 'service_manager'] },
     { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] },
     { path: '/admin-panel', icon: Shield, label: 'Admin Panel', roles: ['admin'] },
     { path: '/integrations', icon: Plug, label: 'Integrations', roles: ['admin'] }

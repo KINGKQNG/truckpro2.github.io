@@ -17,6 +17,8 @@ import WalkAround from './pages/ServiceLane/WalkAround';
 import OBDScanner from './pages/ServiceLane/OBDScanner';
 import OnlineScheduler from './pages/ServiceLane/OnlineScheduler';
 import ShopManagement from './pages/ServiceLane/ShopManagement';
+import LeadManagement from './pages/CRM/LeadManagement';
+import AdvancedReporting from './pages/AdvancedReporting';
 import Layout from './components/Layout';
 import "./App.css";
 
@@ -39,12 +41,14 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/crm/leads" element={<LeadManagement />} />
             <Route path="/work-orders" element={<WorkOrders />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/approvals" element={<FleetApprovals />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/advanced-reporting" element={<AdvancedReporting />} />
             <Route path="/technicians" element={<Technicians />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/integrations" element={<IntegrationsPage />} />

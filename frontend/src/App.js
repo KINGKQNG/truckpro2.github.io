@@ -13,6 +13,10 @@ import Reports from './pages/Reports';
 import Technicians from './pages/Technicians';
 import AdminPanel from './pages/AdminPanel';
 import IntegrationsPage from './pages/IntegrationsPage';
+import WalkAround from './pages/ServiceLane/WalkAround';
+import OBDScanner from './pages/ServiceLane/OBDScanner';
+import OnlineScheduler from './pages/ServiceLane/OnlineScheduler';
+import ShopManagement from './pages/ServiceLane/ShopManagement';
 import Layout from './components/Layout';
 import "./App.css";
 
@@ -44,6 +48,10 @@ function App() {
             <Route path="/technicians" element={<Technicians />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/service-lane/walk-around" element={<WalkAround />} />
+            <Route path="/service-lane/obd-scanner" element={<OBDScanner />} />
+            <Route path="/service-lane/scheduler" element={<OnlineScheduler />} />
+            <Route path="/service-lane/shop-management" element={<ShopManagement />} />
           </Route>
         </Routes>
         <Toaster />

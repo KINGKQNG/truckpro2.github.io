@@ -25,8 +25,8 @@ const Layout = () => {
     { path: '/payments', icon: CreditCard, label: 'Payments', roles: ['admin', 'service_manager'] },
     { path: '/reports', icon: BarChart3, label: 'Reports', roles: ['admin', 'service_manager'] },
     { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] },
-    { path: '/admin-panel', icon: CheckSquare, label: 'Admin Panel', roles: ['admin'] },
-    { path: '/integrations', icon: CheckSquare, label: 'Integrations', roles: ['admin'] }
+    { path: '/admin-panel', icon: Shield, label: 'Admin Panel', roles: ['admin'] },
+    { path: '/integrations', icon: Plug, label: 'Integrations', roles: ['admin'] }
   ];
 
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));

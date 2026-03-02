@@ -168,7 +168,11 @@ const WorkOrders = () => {
                     <p className="text-sm text-gray-600">Estimated Cost</p>
                     <p className="text-2xl font-bold text-blue-600">${wo.estimatedCost.toLocaleString()}</p>
                   </div>
-                  <Button variant="outline" className="w-full">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleViewDetails(wo)}
+                    className="w-full"
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>

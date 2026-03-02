@@ -222,14 +222,27 @@ const WalkAround = () => {
               </div>
 
               <div className="flex gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handlePhotoCapture(area.id)}
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Photo ({area.photos.length})
-                </Button>
+                <div>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    id={`upload-${area.id}`}
+                    onChange={(e) => handlePhotoUpload(area.id, e)}
+                  />
+                  <label htmlFor={`upload-${area.id}`}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      type="button"
+                      onClick={() => document.getElementById(`upload-${area.id}`).click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload ({area.photos.length})
+                    </Button>
+                  </label>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
@@ -239,6 +252,28 @@ const WalkAround = () => {
                   Voice
                 </Button>
               </div>
+
+              {area.photos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {area.photos.map((photo, idx) => (
+                    <div key={idx} className="relative group">
+                      <img 
+                        src={photo.url} 
+                        alt={`${area.name} ${idx + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleRemovePhoto(area.id, idx)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Mark Damage</label>

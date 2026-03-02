@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { Camera, Mic, Save, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { Camera, Mic, Save, Send, AlertCircle, CheckCircle, Upload, X } from 'lucide-react';
 import { Textarea } from '../../components/ui/textarea';
 import { useToast } from '../../hooks/use-toast';
+import { Input } from '../../components/ui/input';
 
 const WalkAround = () => {
   const { toast } = useToast();
@@ -31,20 +32,39 @@ const WalkAround = () => {
     'Scratch', 'Dent', 'Rust', 'Crack', 'Missing Part', 'Worn', 'Leak', 'Other'
   ]);
 
-  const handlePhotoCapture = (areaId) => {
-    // Simulate photo capture
+  const handlePhotoUpload = (areaId, event) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const newPhotos = Array.from(files).map(file => ({
+        name: file.name,
+        size: file.size,
+        url: URL.createObjectURL(file),
+        timestamp: new Date().toISOString()
+      }));
+      
+      setInspectionAreas(prev =>
+        prev.map(area =>
+          area.id === areaId
+            ? { ...area, photos: [...area.photos, ...newPhotos] }
+            : area
+        )
+      );
+      
+      toast({
+        title: "Photos Uploaded",
+        description: `${newPhotos.length} photo(s) added to ${inspectionAreas.find(a => a.id === areaId)?.name}`,
+      });
+    }
+  };
+
+  const handleRemovePhoto = (areaId, photoIndex) => {
     setInspectionAreas(prev =>
       prev.map(area =>
         area.id === areaId
-          ? { ...area, photos: [...area.photos, `photo_${Date.now()}.jpg`] }
+          ? { ...area, photos: area.photos.filter((_, idx) => idx !== photoIndex) }
           : area
       )
     );
-    
-    toast({
-      title: "Photo Captured",
-      description: "Photo added to inspection area",
-    });
   };
 
   const handleVoiceNote = (areaId) => {

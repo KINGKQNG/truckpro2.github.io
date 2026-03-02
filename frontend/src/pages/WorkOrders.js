@@ -46,6 +46,53 @@ const WorkOrders = () => {
 
   const filteredOrders = filterStatus === 'all' ? workOrders : workOrders.filter(wo => wo.status === filterStatus);
 
+  const handleViewDetails = (order) => {
+    setSelectedOrder(order);
+    setIsDetailOpen(true);
+  };
+
+  const handleUpdateStatus = (orderId, newStatus) => {
+    setWorkOrders(prev => prev.map(wo => 
+      wo.id === orderId ? { ...wo, status: newStatus } : wo
+    ));
+    toast({
+      title: "Status Updated",
+      description: `Work order status changed to ${newStatus.replace('_', ' ')}`,
+    });
+  };
+
+  const handleApprove = (orderId) => {
+    setWorkOrders(prev => prev.map(wo => 
+      wo.id === orderId ? { ...wo, approvalStatus: 'approved' } : wo
+    ));
+    toast({
+      title: "Work Order Approved",
+      description: "Customer has approved the work order",
+    });
+    setIsDetailOpen(false);
+  };
+
+  const handleReject = (orderId) => {
+    setWorkOrders(prev => prev.map(wo => 
+      wo.id === orderId ? { ...wo, approvalStatus: 'rejected' } : wo
+    ));
+    toast({
+      title: "Work Order Rejected",
+      description: "Work order has been rejected",
+      variant: "destructive"
+    });
+    setIsDetailOpen(false);
+  };
+
+  const handleDelete = (orderId) => {
+    setWorkOrders(prev => prev.filter(wo => wo.id !== orderId));
+    toast({
+      title: "Work Order Deleted",
+      description: "Work order has been removed",
+    });
+    setIsDetailOpen(false);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">

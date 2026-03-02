@@ -11,21 +11,27 @@ import { useToast } from '../hooks/use-toast';
 const Payments = () => {
   const [payments, setPayments] = useState(MOCK_PAYMENTS);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const handleProcessPayment = (paymentId, method) => {
-    setPayments(prev => prev.map(p => 
-      p.id === paymentId 
-        ? { ...p, status: 'paid', method, paidDate: new Date().toISOString().split('T')[0] }
-        : p
-    ));
+    setIsProcessing(true);
     
-    toast({
-      title: "Payment Processed",
-      description: `Payment successfully processed via ${method.replace('_', ' ')}`,
-    });
-    
-    setSelectedPayment(null);
+    setTimeout(() => {
+      setPayments(prev => prev.map(p => 
+        p.id === paymentId 
+          ? { ...p, status: 'paid', method, paidDate: new Date().toISOString().split('T')[0] }
+          : p
+      ));
+      
+      toast({
+        title: "Payment Processed",
+        description: `Payment successfully processed via ${method.replace('_', ' ')}`,
+      });
+      
+      setSelectedPayment(null);
+      setIsProcessing(false);
+    }, 1500);
   };
 
   const pendingPayments = payments.filter(p => p.status === 'pending');

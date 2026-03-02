@@ -7,13 +7,16 @@ import { Calendar } from '../../components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
-import { Calendar as CalendarIcon, Clock, User, ShoppingCart, CheckCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, ShoppingCart, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
+import { MOCK_TECHNICIANS } from '../../mock/inventoryData';
+import { MOCK_APPOINTMENTS } from '../../mock/data';
 
 const OnlineScheduler = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [date, setDate] = useState(new Date());
+  const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS);
   const [appointmentData, setAppointmentData] = useState({
     email: '',
     phone: '',
@@ -26,12 +29,12 @@ const OnlineScheduler = () => {
   });
 
   const [availableServices] = useState([
-    { id: 'oil_change', name: 'Oil Change', price: 89.99, duration: '30min', category: 'Preventive' },
-    { id: 'tire_rotation', name: 'Tire Rotation', price: 49.99, duration: '45min', category: 'Preventive' },
-    { id: 'brake_inspection', name: 'Brake Inspection', price: 0, duration: '30min', category: 'Inspection' },
-    { id: 'pm_service', name: 'Preventive Maintenance', price: 299.99, duration: '2hrs', category: 'Preventive' },
-    { id: 'engine_diagnostic', name: 'Engine Diagnostic', price: 149.99, duration: '1hr', category: 'Diagnostic' },
-    { id: 'transmission_service', name: 'Transmission Service', price: 249.99, duration: '1.5hrs', category: 'Service' }
+    { id: 'oil_change', name: 'Oil Change', price: 89.99, duration: 0.5, category: 'Preventive' },
+    { id: 'tire_rotation', name: 'Tire Rotation', price: 49.99, duration: 0.75, category: 'Preventive' },
+    { id: 'brake_inspection', name: 'Brake Inspection', price: 0, duration: 0.5, category: 'Inspection' },
+    { id: 'pm_service', name: 'Preventive Maintenance', price: 299.99, duration: 2, category: 'Preventive' },
+    { id: 'engine_diagnostic', name: 'Engine Diagnostic', price: 149.99, duration: 1, category: 'Diagnostic' },
+    { id: 'transmission_service', name: 'Transmission Service', price: 249.99, duration: 1.5, category: 'Service' }
   ]);
 
   const [timeSlots] = useState([
@@ -39,11 +42,38 @@ const OnlineScheduler = () => {
     '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'
   ]);
 
-  const [advisors] = useState([
-    { id: '1', name: 'John Smith', image: '👨‍💼', rating: 4.9 },
-    { id: '2', name: 'Sarah Johnson', image: '👩‍💼', rating: 4.8 },
-    { id: '3', name: 'Mike Davis', image: '👨‍💼', rating: 4.7 }
-  ]);
+  const [advisors] = useState(MOCK_TECHNICIANS.map(t => ({
+    id: t.id,
+    name: t.name,
+    image: '👨‍💼',
+    rating: (t.efficiency / 20).toFixed(1)
+  })));
+
+  const getTechWorkload = (techId, selectedDate, selectedTime) => {
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const techAppointments = appointments.filter(apt => 
+      apt.technicianId === techId && apt.date === dateStr
+    );
+    
+    const totalHours = techAppointments.reduce((sum, apt) => {
+      const service = availableServices.find(s => apt.service.includes(s.name));
+      return sum + (service?.duration || 1);
+    }, 0);
+    
+    return {
+      hoursBooked: totalHours,
+      capacity: 8,
+      available: 8 - totalHours,
+      isAvailable: totalHours < 8
+    };
+  };
+
+  const getEstimatedDuration = () => {
+    return appointmentData.services.reduce((total, serviceId) => {
+      const service = availableServices.find(s => s.id === serviceId);
+      return total + (service?.duration || 0);
+    }, 0);
+  };
 
   const toggleService = (serviceId) => {
     setAppointmentData(prev => ({
@@ -62,22 +92,53 @@ const OnlineScheduler = () => {
   };
 
   const handleSubmit = () => {
+    const estimatedDuration = getEstimatedDuration();
+    const selectedAdvisor = advisors.find(a => a.id === appointmentData.advisor);
+    
+    const newAppointment = {
+      id: `apt${appointments.length + 1}`,
+      customerId: 'new',
+      customerName: appointmentData.email.split('@')[0],
+      email: appointmentData.email,
+      phone: appointmentData.phone,
+      date: date.toISOString().split('T')[0],
+      time: appointmentData.time,
+      service: appointmentData.services.map(id => availableServices.find(s => s.id === id)?.name).join(', '),
+      status: 'scheduled',
+      technicianId: appointmentData.advisor,
+      technician: selectedAdvisor?.name,
+      estimatedCost: getTotalCost(),
+      estimatedDuration: estimatedDuration,
+      transportation: appointmentData.transportation,
+      concerns: appointmentData.concerns,
+      mileage: appointmentData.mileage
+    };
+    
+    setAppointments(prev => [...prev, newAppointment]);
+    
     toast({
       title: "Appointment Booked!",
-      description: "Confirmation sent via email and text",
+      description: `Confirmation sent to ${appointmentData.email}. Work order created.`,
     });
-    // Reset and go to success
+    
     setStep(5);
+  };
+
+  const getAvailableAdvisors = () => {
+    return advisors.filter(advisor => {
+      const workload = getTechWorkload(advisor.id, date, appointmentData.time);
+      const estimatedDuration = getEstimatedDuration();
+      return workload.available >= estimatedDuration;
+    });
   };
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Online Service Scheduler</h1>
-        <p className="text-gray-600 mt-1">Book your service appointment in minutes</p>
+        <p className="text-gray-600 mt-1">Book your service appointment - Real-time tech availability</p>
       </div>
 
-      {/* Progress Steps */}
       <div className="flex justify-between items-center">
         {[
           { num: 1, label: 'Contact' },
@@ -99,7 +160,6 @@ const OnlineScheduler = () => {
         ))}
       </div>
 
-      {/* Step 1: Contact Information */}
       {step === 1 && (
         <Card>
           <CardHeader>
@@ -142,7 +202,6 @@ const OnlineScheduler = () => {
         </Card>
       )}
 
-      {/* Step 2: Select Services */}
       {step === 2 && (
         <Card>
           <CardHeader>
@@ -150,7 +209,7 @@ const OnlineScheduler = () => {
               <span>Select Services</span>
               <Badge className="bg-blue-600 text-white">
                 <ShoppingCart className="h-4 w-4 mr-1" />
-                {appointmentData.services.length} selected
+                {appointmentData.services.length} selected • {getEstimatedDuration()}h
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -170,7 +229,7 @@ const OnlineScheduler = () => {
                     <div>
                       <Badge variant="outline" className="mb-2">{service.category}</Badge>
                       <h3 className="font-semibold">{service.name}</h3>
-                      <p className="text-sm text-gray-600">{service.duration}</p>
+                      <p className="text-sm text-gray-600">{service.duration}h</p>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-blue-600">
@@ -212,7 +271,6 @@ const OnlineScheduler = () => {
         </Card>
       )}
 
-      {/* Step 3: Date, Time & Advisor */}
       {step === 3 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -260,33 +318,47 @@ const OnlineScheduler = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Select Advisor
+                  Select Technician - Live Availability
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {advisors.map((advisor) => (
-                    <div
-                      key={advisor.id}
-                      onClick={() => setAppointmentData(prev => ({ ...prev, advisor: advisor.id }))}
-                      className={`p-3 border-2 rounded-lg cursor-pointer flex items-center justify-between ${
-                        appointmentData.advisor === advisor.id
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{advisor.image}</span>
-                        <div>
-                          <p className="font-semibold">{advisor.name}</p>
-                          <p className="text-sm text-gray-600">⭐ {advisor.rating}</p>
+                  {getAvailableAdvisors().map((advisor) => {
+                    const workload = getTechWorkload(advisor.id, date, appointmentData.time);
+                    return (
+                      <div
+                        key={advisor.id}
+                        onClick={() => setAppointmentData(prev => ({ ...prev, advisor: advisor.id }))}
+                        className={`p-3 border-2 rounded-lg cursor-pointer flex items-center justify-between ${
+                          appointmentData.advisor === advisor.id
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{advisor.image}</span>
+                          <div>
+                            <p className="font-semibold">{advisor.name}</p>
+                            <p className="text-sm text-gray-600">⭐ {advisor.rating}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={workload.available >= 2 ? 'bg-green-500' : 'bg-amber-500'}>
+                                {workload.available.toFixed(1)}h available
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
+                        {appointmentData.advisor === advisor.id && (
+                          <CheckCircle className="h-5 w-5 text-blue-600" />
+                        )}
                       </div>
-                      {appointmentData.advisor === advisor.id && (
-                        <CheckCircle className="h-5 w-5 text-blue-600" />
-                      )}
+                    );
+                  })}
+                  {getAvailableAdvisors().length === 0 && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertCircle className="h-5 w-5 text-amber-600 mb-2" />
+                      <p className="text-sm text-amber-800">No technicians available for selected time. Estimated service time: {getEstimatedDuration()}h</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -317,7 +389,11 @@ const OnlineScheduler = () => {
               <Button onClick={() => setStep(2)} variant="outline" className="flex-1">
                 Back
               </Button>
-              <Button onClick={() => setStep(4)} className="flex-1 bg-gradient-to-r from-red-600 to-blue-600">
+              <Button 
+                onClick={() => setStep(4)} 
+                className="flex-1 bg-gradient-to-r from-red-600 to-blue-600"
+                disabled={!appointmentData.advisor || !appointmentData.time}
+              >
                 Review Appointment
               </Button>
             </div>
@@ -325,7 +401,6 @@ const OnlineScheduler = () => {
         </div>
       )}
 
-      {/* Step 4: Review & Confirm */}
       {step === 4 && (
         <Card>
           <CardHeader>
@@ -342,12 +417,12 @@ const OnlineScheduler = () => {
                 <p className="font-semibold">{appointmentData.time}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Service Advisor</p>
+                <p className="text-sm text-gray-600">Technician</p>
                 <p className="font-semibold">{advisors.find(a => a.id === appointmentData.advisor)?.name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Transportation</p>
-                <p className="font-semibold capitalize">{appointmentData.transportation?.replace('_', ' ')}</p>
+                <p className="text-sm text-gray-600">Duration</p>
+                <p className="font-semibold">{getEstimatedDuration()}h</p>
               </div>
             </div>
 
@@ -358,7 +433,7 @@ const OnlineScheduler = () => {
                   const service = availableServices.find(s => s.id === serviceId);
                   return (
                     <div key={serviceId} className="flex justify-between p-3 bg-gray-50 rounded-lg">
-                      <span>{service?.name}</span>
+                      <span>{service?.name} ({service?.duration}h)</span>
                       <span className="font-semibold">${service?.price.toFixed(2)}</span>
                     </div>
                   );
@@ -384,17 +459,16 @@ const OnlineScheduler = () => {
         </Card>
       )}
 
-      {/* Step 5: Success */}
       {step === 5 && (
         <Card>
           <CardContent className="py-12 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Appointment Confirmed!</h2>
             <p className="text-gray-600 mb-6">
-              Confirmation has been sent to {appointmentData.email}
+              Confirmation sent to {appointmentData.email}
             </p>
             <p className="text-sm text-gray-500 mb-4">
-              You will receive a reminder 24 hours before your appointment
+              Work order created • You will receive a reminder 24 hours before
             </p>
             <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-red-600 to-blue-600">
               Schedule Another Appointment

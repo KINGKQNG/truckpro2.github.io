@@ -3,10 +3,17 @@ import { MOCK_TECHNICIANS } from '../mock/inventoryData';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { User, MapPin, Wrench, Award, Phone, Mail } from 'lucide-react';
+import { User, MapPin, Wrench, Award, Phone, Mail, Edit, Save, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { useToast } from '../hooks/use-toast';
 
 const Technicians = () => {
-  const [technicians] = useState(MOCK_TECHNICIANS);
+  const [technicians, setTechnicians] = useState(MOCK_TECHNICIANS);
+  const [selectedTech, setSelectedTech] = useState(null);
+  const [editingSkills, setEditingSkills] = useState(false);
+  const [skillLevels, setSkillLevels] = useState({});
+  const { toast } = useToast();
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -29,6 +36,35 @@ const Technicians = () => {
   };
 
   const skillCategories = ['Engine Repair', 'Diagnostics', 'Preventive Maintenance', 'Electrical', 'Brake Service', 'Transmission'];
+
+  const handleEditSkills = (tech) => {
+    setSelectedTech(tech);
+    setSkillLevels(tech.skillLevels);
+    setEditingSkills(true);
+  };
+
+  const handleSaveSkills = () => {
+    setTechnicians(prev => prev.map(t => 
+      t.id === selectedTech.id 
+        ? { ...t, skillLevels: skillLevels }
+        : t
+    ));
+    
+    toast({
+      title: "Skills Updated",
+      description: `Skill levels updated for ${selectedTech.name}`,
+    });
+    
+    setEditingSkills(false);
+    setSelectedTech(null);
+  };
+
+  const updateSkillLevel = (skill, level) => {
+    setSkillLevels(prev => ({
+      ...prev,
+      [skill]: level
+    }));
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -109,8 +145,13 @@ const Technicians = () => {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full">
-                View Full Profile
+              <Button 
+                onClick={() => handleEditSkills(tech)} 
+                variant="outline" 
+                className="w-full"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Skills
               </Button>
             </CardContent>
           </Card>
@@ -185,6 +226,52 @@ const Technicians = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Skills Dialog */}
+      <Dialog open={editingSkills} onOpenChange={setEditingSkills}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Skill Levels - {selectedTech?.name}</DialogTitle>
+          </DialogHeader>
+          {selectedTech && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">Update skill levels as technicians learn and improve</p>
+              {skillCategories.map((skill) => (
+                <div key={skill} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{skill}</p>
+                    <p className="text-xs text-gray-500">Current: {skillLevels[skill] || 'Not set'}</p>
+                  </div>
+                  <Select
+                    value={skillLevels[skill] || ''}
+                    onValueChange={(value) => updateSkillLevel(skill, value)}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="expert">Expert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSkills(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSaveSkills} className="bg-gradient-to-r from-red-600 to-blue-600">
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

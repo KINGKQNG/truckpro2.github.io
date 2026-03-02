@@ -97,7 +97,11 @@ const Dashboard = () => {
             {pendingApprovalOrders.length > 0 ? (
               <div className="space-y-3">
                 {pendingApprovalOrders.map((wo) => (
-                  <div key={wo.id} className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+                  <div 
+                    key={wo.id} 
+                    className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
+                    onClick={() => handleNavigateToWorkOrder(wo.id)}
+                  >
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{wo.workOrderNumber}</p>
                       <p className="text-xs text-gray-600">{wo.customerName}</p>

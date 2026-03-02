@@ -32,6 +32,7 @@ const Layout = () => {
     { path: '/advanced-reporting', icon: FileBarChart, label: 'SAP Controlling', roles: ['admin', 'service_manager'] },
     { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] },
     { path: '/admin-panel', icon: Shield, label: 'Admin Panel', roles: ['admin'] },
+    { path: '/admin-code-editor', icon: FileCode, label: 'Code Editor', roles: ['admin'] },
     { path: '/integrations', icon: Plug, label: 'Integrations', roles: ['admin'] }
   ];
 

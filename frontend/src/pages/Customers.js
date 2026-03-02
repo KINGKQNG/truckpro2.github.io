@@ -180,10 +180,6 @@ const Customers = () => {
           )}
         </DialogContent>
       </Dialog>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </div>
   );
 };

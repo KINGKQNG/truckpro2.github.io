@@ -12,6 +12,7 @@ import Payments from './pages/Payments';
 import Reports from './pages/Reports';
 import Technicians from './pages/Technicians';
 import AdminPanel from './pages/AdminPanel';
+import AdminCodeEditor from './pages/AdminCodeEditor';
 import IntegrationsPage from './pages/IntegrationsPage';
 import WalkAround from './pages/ServiceLane/WalkAround';
 import OBDScanner from './pages/ServiceLane/OBDScanner';
@@ -51,6 +52,7 @@ function App() {
             <Route path="/advanced-reporting" element={<AdvancedReporting />} />
             <Route path="/technicians" element={<Technicians />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
+            <Route path="/admin-code-editor" element={<AdminCodeEditor />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/service-lane/walk-around" element={<WalkAround />} />
             <Route path="/service-lane/obd-scanner" element={<OBDScanner />} />

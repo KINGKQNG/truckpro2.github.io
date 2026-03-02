@@ -182,6 +182,120 @@ const WorkOrders = () => {
           </Card>
         ))}
       </div>
+
+      {/* Work Order Detail Modal */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Work Order Details - {selectedOrder?.workOrderNumber}</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Customer</p>
+                  <p className="font-semibold">{selectedOrder.customerName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Vehicle</p>
+                  <p className="font-semibold">{selectedOrder.truck}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Technician</p>
+                  <p className="font-semibold">{selectedOrder.assignedTech}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Scheduled Date</p>
+                  <p className="font-semibold">{new Date(selectedOrder.scheduledDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Description</p>
+                <p className="p-3 bg-gray-50 rounded-lg">{selectedOrder.description}</p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Change Status</p>
+                <Select 
+                  value={selectedOrder.status} 
+                  onValueChange={(value) => handleUpdateStatus(selectedOrder.id, value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-3">Parts</h4>
+                  <div className="space-y-2">
+                    {selectedOrder.parts.map((part, idx) => (
+                      <div key={idx} className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{part.name}</p>
+                          <p className="text-xs text-gray-600">{part.partNumber} • Qty: {part.quantity}</p>
+                        </div>
+                        <p className="font-bold">${(part.cost * part.quantity).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-3">Labor</h4>
+                  <div className="space-y-2">
+                    {selectedOrder.labor.map((labor, idx) => (
+                      <div key={idx} className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{labor.description}</p>
+                          <p className="text-xs text-gray-600">{labor.hours}h @ ${labor.rate}/hr</p>
+                        </div>
+                        <p className="font-bold">${labor.cost.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold">Total Estimated Cost</span>
+                  <span className="text-2xl font-bold text-blue-600">${selectedOrder.estimatedCost.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <DialogFooter className="flex gap-2">
+                {selectedOrder.approvalStatus === 'pending' && (
+                  <>
+                    <Button onClick={() => handleApprove(selectedOrder.id)} className="bg-green-600 hover:bg-green-700">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Approve
+                    </Button>
+                    <Button onClick={() => handleReject(selectedOrder.id)} variant="outline" className="border-red-600 text-red-600">
+                      <X className="h-4 w-4 mr-2" />
+                      Reject
+                    </Button>
+                  </>
+                )}
+                <Button onClick={() => handleDelete(selectedOrder.id)} variant="outline" className="border-red-600 text-red-600">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+                <Button onClick={() => setIsDetailOpen(false)} variant="outline">
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

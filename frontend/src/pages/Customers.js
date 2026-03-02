@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
-import { MOCK_CUSTOMERS } from '../mock/data';
+import { MOCK_CUSTOMERS, MOCK_TRUCKS, MOCK_WORK_ORDERS } from '../mock/data';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Building2, User, Phone, Mail, TruckIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
+import { Building2, User, Phone, Mail, TruckIcon, Eye, Edit, History } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
 
 const Customers = () => {
   const [customers] = useState(MOCK_CUSTOMERS);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleViewDetails = (customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailOpen(true);
+  };
+
+  const getCustomerTrucks = (customerId) => {
+    return MOCK_TRUCKS.filter(t => t.customerId === customerId);
+  };
+
+  const getCustomerWorkOrders = (customerId) => {
+    return MOCK_WORK_ORDERS.filter(wo => wo.customerId === customerId);
+  };
 
   return (
     <div className="p-6 space-y-6">

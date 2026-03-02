@@ -267,6 +267,7 @@ const LeadManagement = () => {
                   <Button
                     size="sm"
                     className="w-full bg-gradient-to-r from-red-600 to-blue-600"
+                    onClick={() => handleView360(lead)}
                   >
                     View 360° Profile
                   </Button>

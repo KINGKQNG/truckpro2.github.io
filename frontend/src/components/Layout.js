@@ -10,6 +10,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const roleLabel = (user?.role || 'user').replace('_', ' ');
 
   const handleLogout = () => {
     logout();
@@ -58,7 +59,7 @@ const Layout = () => {
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
               <p className="font-semibold">{user?.name}</p>
-              <p className="text-xs text-gray-600 capitalize">{user?.role.replace('_', ' ')}</p>
+              <p className="text-xs text-gray-600 capitalize">{roleLabel}</p>
             </div>
             <Button data-testid="layout-logout-button" onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />

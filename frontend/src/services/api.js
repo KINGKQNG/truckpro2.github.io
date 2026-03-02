@@ -6,8 +6,13 @@ const API_BASE = `${BACKEND_URL}/api`;
 const getToken = () => {
   const user = localStorage.getItem('user');
   if (user) {
-    const userData = JSON.parse(user);
-    return userData.token;
+    try {
+      const userData = JSON.parse(user);
+      return userData.token;
+    } catch (error) {
+      localStorage.removeItem('user');
+      return null;
+    }
   }
   return null;
 };

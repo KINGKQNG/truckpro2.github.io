@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { User, MapPin, Wrench, Award, Phone, Mail, Edit, Save, X } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
 import { techniciansAPI } from '../services/api';
@@ -253,6 +253,7 @@ const Technicians = () => {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit Skill Levels - {selectedTech?.name}</DialogTitle>
+            <DialogDescription data-testid="technician-skill-dialog-description">Update technician skill levels to improve job assignment accuracy.</DialogDescription>
           </DialogHeader>
           {selectedTech && (
             <div className="space-y-4">

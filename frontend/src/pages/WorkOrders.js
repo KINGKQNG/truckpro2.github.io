@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Eye, Plus, AlertCircle, Clock, CheckCircle, Calendar, Edit, Trash2, X } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -252,6 +252,7 @@ const WorkOrders = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Work Order Details - {selectedOrder?.workOrderNumber}</DialogTitle>
+            <DialogDescription data-testid="work-order-detail-dialog-description">Review work order details, update status, and approve or reject service.</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-6">

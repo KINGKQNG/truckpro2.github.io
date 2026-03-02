@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Building2, User, Phone, Mail, TruckIcon, Eye, Edit, History } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { customersAPI } from '../services/api';
@@ -115,6 +115,7 @@ const Customers = () => {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Customer Details - {selectedCustomer?.name}</DialogTitle>
+            <DialogDescription data-testid="customer-detail-dialog-description">View customer contact details, fleet vehicles, and service history.</DialogDescription>
           </DialogHeader>
           {selectedCustomer && (
             <div className="space-y-6">

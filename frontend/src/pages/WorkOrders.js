@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MOCK_WORK_ORDERS } from '../mock/data';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Eye, Plus, AlertCircle, Clock, CheckCircle, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
+import { Eye, Plus, AlertCircle, Clock, CheckCircle, Calendar, Edit, Trash2, X } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const WorkOrders = () => {
-  const [workOrders] = useState(MOCK_WORK_ORDERS);
+  const [workOrders, setWorkOrders] = useState(MOCK_WORK_ORDERS);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const { toast } = useToast();
 
   const getStatusIcon = (status) => {
     switch (status) {

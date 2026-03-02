@@ -1,16 +1,25 @@
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import React, { useState } from 'react';
 import { MOCK_KPI_DATA, MOCK_WORK_ORDERS } from '../mock/data';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { DollarSign, Wrench, Clock, Star, TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const kpis = MOCK_KPI_DATA;
+  const navigate = useNavigate();
 
   const pendingApprovalOrders = MOCK_WORK_ORDERS.filter(wo => wo.approvalStatus === 'pending');
   const inProgressOrders = MOCK_WORK_ORDERS.filter(wo => wo.status === 'in_progress');
+
+  const handleNavigateToWorkOrder = (workOrderId) => {
+    navigate(`/work-orders?id=${workOrderId}`);
+  };
+
+  const handleNavigateToApprovals = () => {
+    navigate('/approvals');
+  };
 
   const KPICard = ({ title, value, change, icon: Icon, prefix = '', suffix = '' }) => {
     const isPositive = change > 0;

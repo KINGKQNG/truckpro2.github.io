@@ -39,11 +39,11 @@ const Layout = () => {
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" data-testid="app-layout">
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden">
+            <Button data-testid="layout-sidebar-toggle" variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden">
               <Menu className="h-6 w-6" />
             </Button>
             <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ const Layout = () => {
               <p className="font-semibold">{user?.name}</p>
               <p className="text-xs text-gray-600 capitalize">{user?.role.replace('_', ' ')}</p>
             </div>
-            <Button onClick={handleLogout} variant="outline" size="sm">
+            <Button data-testid="layout-logout-button" onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
@@ -77,6 +77,7 @@ const Layout = () => {
               return (
                 <Link key={item.path} to={item.path}>
                   <Button
+                    data-testid={`layout-nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                     variant={isActive ? 'default' : 'ghost'}
                     className={`w-full justify-start ${isActive ? 'bg-gradient-to-r from-red-600 to-blue-600 text-white' : ''}`}
                   >

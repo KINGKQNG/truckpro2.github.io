@@ -9,10 +9,7 @@ import { Switch } from '../components/ui/switch';
 import { Users, Settings, Eye, Edit2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { usersAPI } from '../services/api';
 
 const AVAILABLE_TILES = [
   { id: 'dashboard', name: 'Dashboard', description: 'Overview and KPIs' },
@@ -33,60 +30,22 @@ const AdminPanel = () => {
   const [userTiles, setUserTiles] = useState([]);
   const { toast } = useToast();
 
-  // For now, use mock data - will connect to backend
   useEffect(() => {
-    const mockUsers = [
-      {
-        id: '1',
-        email: 'admin@truckservice.com',
-        name: 'Admin User',
-        role: 'admin',
-        isActive: true,
-        tiles: AVAILABLE_TILES.map((t, i) => ({
-          tile_id: t.id,
-          tile_name: t.name,
-          enabled: true,
-          order: i + 1
-        }))
-      },
-      {
-        id: '2',
-        email: 'manager@truckservice.com',
-        name: 'Service Manager',
-        role: 'service_manager',
-        isActive: true,
-        tiles: AVAILABLE_TILES.filter(t => t.id !== 'admin_panel' && t.id !== 'integrations' && t.id !== 'approvals').map((t, i) => ({
-          tile_id: t.id,
-          tile_name: t.name,
-          enabled: true,
-          order: i + 1
-        }))
-      },
-      {
-        id: '3',
-        email: 'tech@truckservice.com',
-        name: 'John Technician',
-        role: 'technician',
-        isActive: true,
-        tiles: [
-          { tile_id: 'dashboard', tile_name: 'Dashboard', enabled: true, order: 1 },
-          { tile_id: 'work_orders', tile_name: 'Work Orders', enabled: true, order: 2 }
-        ]
-      },
-      {
-        id: '4',
-        email: 'fleet@company.com',
-        name: 'Fleet Manager',
-        role: 'fleet_manager',
-        isActive: true,
-        tiles: [
-          { tile_id: 'dashboard', tile_name: 'Dashboard', enabled: true, order: 1 },
-          { tile_id: 'approvals', tile_name: 'Fleet Approvals', enabled: true, order: 2 }
-        ]
+    const loadUsers = async () => {
+      try {
+        const response = await usersAPI.getAll();
+        setUsers(response.data || []);
+      } catch (error) {
+        toast({
+          title: 'Load failed',
+          description: 'Unable to load users',
+          variant: 'destructive'
+        });
       }
-    ];
-    setUsers(mockUsers);
-  }, []);
+    };
+
+    loadUsers();
+  }, [toast]);
 
   const handleEditTiles = (user) => {
     setSelectedUser(user);
@@ -120,21 +79,23 @@ const AdminPanel = () => {
     setUserTiles(prev => prev.filter(t => t.tile_id !== tileId));
   };
 
-  const saveTiles = () => {
-    // Update user tiles (mock for now - will connect to backend)
-    setUsers(prev =>
-      prev.map(u =>
-        u.id === selectedUser.id ? { ...u, tiles: userTiles } : u
-      )
-    );
-    
-    toast({
-      title: "Tiles Updated",
-      description: `Tiles have been updated for ${selectedUser.name}`,
-    });
-    
-    setSelectedUser(null);
-    setUserTiles([]);
+  const saveTiles = async () => {
+    try {
+      const response = await usersAPI.updateTiles(selectedUser.id, userTiles);
+      setUsers(prev => prev.map(u => (u.id === selectedUser.id ? response.data : u)));
+      toast({
+        title: "Tiles Updated",
+        description: `Tiles have been updated for ${selectedUser.name}`,
+      });
+      setSelectedUser(null);
+      setUserTiles([]);
+    } catch (error) {
+      toast({
+        title: 'Save failed',
+        description: 'Unable to save tile permissions',
+        variant: 'destructive'
+      });
+    }
   };
 
   const getRoleBadgeColor = (role) => {
@@ -148,7 +109,7 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="admin-panel-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
         <p className="text-gray-600 mt-1">Manage users, permissions, and system settings</p>
@@ -299,6 +260,7 @@ const AdminPanel = () => {
                               Cancel
                             </Button>
                             <Button
+                              data-testid="admin-panel-save-tiles-button"
                               className="bg-gradient-to-r from-red-600 to-blue-600"
                               onClick={saveTiles}
                             >

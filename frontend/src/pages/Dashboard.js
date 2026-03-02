@@ -1,24 +1,46 @@
-import React, { useState } from 'react';
-import { MOCK_KPI_DATA, MOCK_WORK_ORDERS } from '../mock/data';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { DollarSign, Wrench, Clock, Star, TrendingUp, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react';
 import { Badge } from '../components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { dashboardAPI } from '../services/api';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const kpis = MOCK_KPI_DATA;
   const navigate = useNavigate();
+  const [kpis, setKpis] = useState({
+    totalRevenue: 0,
+    revenueChange: 0,
+    workOrdersCompleted: 0,
+    workOrdersChange: 0,
+    avgRepairTime: 0,
+    repairTimeChange: 0,
+    customerSatisfaction: 0,
+    satisfactionChange: 0,
+    serviceTypes: []
+  });
+  const [pendingApprovalOrders, setPendingApprovalOrders] = useState([]);
+  const [inProgressOrders, setInProgressOrders] = useState([]);
 
-  const pendingApprovalOrders = MOCK_WORK_ORDERS.filter(wo => wo.approvalStatus === 'pending');
-  const inProgressOrders = MOCK_WORK_ORDERS.filter(wo => wo.status === 'in_progress');
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const response = await dashboardAPI.getSummary();
+        setKpis(response.data.kpis);
+        setPendingApprovalOrders(response.data.pendingApprovalOrders || []);
+        setInProgressOrders(response.data.inProgressOrders || []);
+      } catch (error) {
+        setPendingApprovalOrders([]);
+        setInProgressOrders([]);
+      }
+    };
+
+    loadDashboard();
+  }, []);
 
   const handleNavigateToWorkOrder = (workOrderId) => {
     navigate(`/work-orders?id=${workOrderId}`);
-  };
-
-  const handleNavigateToApprovals = () => {
-    navigate('/approvals');
   };
 
   const KPICard = ({ title, value, change, icon: Icon, prefix = '', suffix = '' }) => {
@@ -26,7 +48,7 @@ const Dashboard = () => {
     const TrendIcon = isPositive ? TrendingUp : TrendingDown;
 
     return (
-      <Card className="hover:shadow-lg transition-shadow duration-300">
+      <Card className="hover:shadow-lg transition-shadow duration-300" data-testid={`dashboard-kpi-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
           <div className="p-2 bg-gradient-to-br from-red-50 to-blue-50 rounded-lg">
@@ -34,7 +56,7 @@ const Dashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold" data-testid={`dashboard-kpi-value-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
             {prefix}{typeof value === 'number' && value.toLocaleString()}{suffix}
           </div>
           <div className="flex items-center text-xs mt-1">
@@ -49,9 +71,9 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="dashboard-page">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.name}!</h1>
+        <h1 className="text-3xl font-bold text-gray-900" data-testid="dashboard-welcome-title">Welcome back, {user?.name}!</h1>
         <p className="text-gray-600 mt-1">Here's what's happening with your service center today.</p>
       </div>
 
@@ -97,10 +119,11 @@ const Dashboard = () => {
             {pendingApprovalOrders.length > 0 ? (
               <div className="space-y-3">
                 {pendingApprovalOrders.map((wo) => (
-                  <div 
+                  <div
                     key={wo.id} 
                     className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors cursor-pointer"
                     onClick={() => handleNavigateToWorkOrder(wo.id)}
+                    data-testid={`dashboard-pending-order-${wo.id}`}
                   >
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{wo.workOrderNumber}</p>
@@ -131,7 +154,7 @@ const Dashboard = () => {
             {inProgressOrders.length > 0 ? (
               <div className="space-y-3">
                 {inProgressOrders.map((wo) => (
-                  <div key={wo.id} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                  <div key={wo.id} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors" data-testid={`dashboard-progress-order-${wo.id}`}>
                     <div className="flex-1">
                       <p className="font-semibold text-sm">{wo.workOrderNumber}</p>
                       <p className="text-xs text-gray-600">{wo.customerName}</p>

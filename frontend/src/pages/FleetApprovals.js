@@ -1,36 +1,71 @@
-import React, { useState } from 'react';
-import { MOCK_WORK_ORDERS } from '../mock/data';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { workOrdersAPI } from '../services/api';
 
 const FleetApprovals = () => {
-  const [workOrders, setWorkOrders] = useState(MOCK_WORK_ORDERS);
+  const [workOrders, setWorkOrders] = useState([]);
   const { toast } = useToast();
+
+  const loadPendingOrders = async () => {
+    try {
+      const response = await workOrdersAPI.getAll();
+      setWorkOrders(response.data || []);
+    } catch (error) {
+      toast({
+        title: 'Load failed',
+        description: 'Unable to load pending approvals',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadPendingOrders();
+  }, []);
 
   const pendingOrders = workOrders.filter(wo => wo.approvalStatus === 'pending');
 
-  const handleApprove = (orderId) => {
-    setWorkOrders(prev => prev.map(wo => wo.id === orderId ? { ...wo, approvalStatus: 'approved' } : wo));
-    toast({
-      title: "Work Order Approved",
-      description: "The work order has been approved and the technician can proceed.",
-    });
+  const handleApprove = async (orderId) => {
+    try {
+      await workOrdersAPI.updateApproval(orderId, 'approved');
+      await loadPendingOrders();
+      toast({
+        title: "Work Order Approved",
+        description: "The work order has been approved and the technician can proceed.",
+      });
+    } catch (error) {
+      toast({
+        title: 'Approval failed',
+        description: 'Unable to approve work order',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleReject = (orderId) => {
-    setWorkOrders(prev => prev.map(wo => wo.id === orderId ? { ...wo, approvalStatus: 'rejected' } : wo));
-    toast({
-      title: "Work Order Rejected",
-      description: "The work order has been rejected.",
-      variant: "destructive"
-    });
+  const handleReject = async (orderId) => {
+    try {
+      await workOrdersAPI.updateApproval(orderId, 'rejected');
+      await loadPendingOrders();
+      toast({
+        title: "Work Order Rejected",
+        description: "The work order has been rejected.",
+        variant: "destructive"
+      });
+    } catch (error) {
+      toast({
+        title: 'Reject failed',
+        description: 'Unable to reject work order',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="fleet-approvals-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Fleet Approvals</h1>
         <p className="text-gray-600 mt-1">Review and approve service estimates for your fleet</p>
@@ -98,11 +133,11 @@ const FleetApprovals = () => {
                   </div>
 
                   <div className="flex gap-3 pt-4 border-t">
-                    <Button onClick={() => handleApprove(wo.id)} className="flex-1 bg-green-600 hover:bg-green-700">
+                    <Button data-testid={`fleet-approve-button-${wo.id}`} onClick={() => handleApprove(wo.id)} className="flex-1 bg-green-600 hover:bg-green-700">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Approve
                     </Button>
-                    <Button onClick={() => handleReject(wo.id)} variant="outline" className="flex-1 border-red-600 text-red-600 hover:bg-red-50">
+                    <Button data-testid={`fleet-reject-button-${wo.id}`} onClick={() => handleReject(wo.id)} variant="outline" className="flex-1 border-red-600 text-red-600 hover:bg-red-50">
                       <XCircle className="h-4 w-4 mr-2" />
                       Reject
                     </Button>

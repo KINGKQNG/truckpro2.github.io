@@ -4,67 +4,56 @@ import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Scan, AlertTriangle, CheckCircle, Wrench, RefreshCw } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
+import { obdAPI } from '../../services/api';
 
 const OBDScanner = () => {
   const { toast } = useToast();
   const [scanning, setScanning] = useState(false);
   const [scanData, setScanData] = useState(null);
 
-  const handleScan = () => {
+  const handleScan = async () => {
     setScanning(true);
     toast({
       title: "Scanning Vehicle",
       description: "Connecting to OBD-II port...",
     });
 
-    // Simulate OBD-II scan
-    setTimeout(() => {
-      const mockData = {
-        vin: '1XKAD49X0CJ123457',
-        make: 'Peterbilt',
-        model: '579',
-        year: 2019,
-        mileage: 325478,
-        engineHours: 18234,
-        oilLife: 35,
-        tirePressure: {
-          frontLeft: 105,
-          frontRight: 108,
-          rearLeft: 110,
-          rearRight: 107
-        },
-        dtcs: [
-          { code: 'P0420', description: 'Catalyst System Efficiency Below Threshold', severity: 'warning' },
-          { code: 'P0171', description: 'System Too Lean (Bank 1)', severity: 'warning' }
-        ],
-        recalls: [
-          { id: 'R2024-001', description: 'Fuel Pump Recall', status: 'open' }
-        ],
-        batteryVoltage: 12.6,
-        coolantTemp: 195,
-        fuelLevel: 65,
-        timestamp: new Date().toISOString()
-      };
-
-      setScanData(mockData);
-      setScanning(false);
-      
+    try {
+      const response = await obdAPI.scan();
+      setScanData(response.data);
       toast({
         title: "Scan Complete",
         description: "Vehicle data captured successfully",
       });
-    }, 3000);
+    } catch (error) {
+      toast({
+        title: 'Scan failed',
+        description: 'Unable to scan vehicle',
+        variant: 'destructive'
+      });
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const createServiceOrder = () => {
-    toast({
-      title: "Creating Repair Order",
-      description: "RO created with OBD-II data and DTC codes",
-    });
+  const createServiceOrder = async () => {
+    try {
+      await obdAPI.createRepairOrder(scanData);
+      toast({
+        title: "Creating Repair Order",
+        description: "RO created with OBD-II data and DTC codes",
+      });
+    } catch (error) {
+      toast({
+        title: 'RO creation failed',
+        description: 'Unable to create repair order',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="obd-scanner-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">eAdvisor OBD-II Scanner</h1>
         <p className="text-gray-600 mt-1">Instant vehicle data capture and diagnostic scanning</p>
@@ -78,6 +67,7 @@ const OBDScanner = () => {
           <div className="flex items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg">
             {!scanning && !scanData && (
               <Button
+                data-testid="obd-start-scan-button"
                 size="lg"
                 onClick={handleScan}
                 className="bg-gradient-to-r from-red-600 to-blue-600"
@@ -217,7 +207,7 @@ const OBDScanner = () => {
                           <Badge className="bg-red-600 text-white mb-2">{dtc.code}</Badge>
                           <p className="font-semibold">{dtc.description}</p>
                         </div>
-                        <Button size="sm" variant="outline">
+                        <Button data-testid={`obd-create-ro-from-dtc-${dtc.code.toLowerCase()}`} size="sm" variant="outline" onClick={createServiceOrder}>
                           <Wrench className="h-4 w-4 mr-2" />
                           Create RO
                         </Button>
@@ -259,6 +249,7 @@ const OBDScanner = () => {
 
           <div className="flex gap-4">
             <Button
+              data-testid="obd-create-repair-order-button"
               size="lg"
               onClick={createServiceOrder}
               className="flex-1 bg-gradient-to-r from-red-600 to-blue-600"
@@ -267,6 +258,7 @@ const OBDScanner = () => {
               Create Repair Order
             </Button>
             <Button
+              data-testid="obd-scan-again-button"
               size="lg"
               variant="outline"
               onClick={handleScan}

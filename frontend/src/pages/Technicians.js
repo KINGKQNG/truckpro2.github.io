@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { MOCK_TECHNICIANS } from '../mock/inventoryData';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -7,13 +6,31 @@ import { User, MapPin, Wrench, Award, Phone, Mail, Edit, Save, X } from 'lucide-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
+import { techniciansAPI } from '../services/api';
 
 const Technicians = () => {
-  const [technicians, setTechnicians] = useState(MOCK_TECHNICIANS);
+  const [technicians, setTechnicians] = useState([]);
   const [selectedTech, setSelectedTech] = useState(null);
   const [editingSkills, setEditingSkills] = useState(false);
   const [skillLevels, setSkillLevels] = useState({});
   const { toast } = useToast();
+
+  const loadTechnicians = async () => {
+    try {
+      const response = await techniciansAPI.getAll();
+      setTechnicians(response.data || []);
+    } catch (error) {
+      toast({
+        title: 'Load failed',
+        description: 'Unable to load technicians',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadTechnicians();
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -43,20 +60,23 @@ const Technicians = () => {
     setEditingSkills(true);
   };
 
-  const handleSaveSkills = () => {
-    setTechnicians(prev => prev.map(t => 
-      t.id === selectedTech.id 
-        ? { ...t, skillLevels: skillLevels }
-        : t
-    ));
-    
-    toast({
-      title: "Skills Updated",
-      description: `Skill levels updated for ${selectedTech.name}`,
-    });
-    
-    setEditingSkills(false);
-    setSelectedTech(null);
+  const handleSaveSkills = async () => {
+    try {
+      await techniciansAPI.updateSkills(selectedTech.id, skillLevels);
+      await loadTechnicians();
+      toast({
+        title: "Skills Updated",
+        description: `Skill levels updated for ${selectedTech.name}`,
+      });
+      setEditingSkills(false);
+      setSelectedTech(null);
+    } catch (error) {
+      toast({
+        title: 'Update failed',
+        description: 'Unable to update technician skills',
+        variant: 'destructive'
+      });
+    }
   };
 
   const updateSkillLevel = (skill, level) => {
@@ -67,7 +87,7 @@ const Technicians = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="technicians-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Technician Tracking & Skill Matrix</h1>
         <p className="text-gray-600 mt-1">Monitor technician availability and skills for optimal job assignment</p>
@@ -75,7 +95,7 @@ const Technicians = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {technicians.map((tech) => (
-          <Card key={tech.id} className="hover:shadow-lg transition-shadow">
+          <Card key={tech.id} className="hover:shadow-lg transition-shadow" data-testid={`technician-card-${tech.id}`}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
@@ -145,7 +165,8 @@ const Technicians = () => {
                 </div>
               </div>
 
-              <Button 
+              <Button
+                data-testid={`technician-edit-skills-${tech.id}`}
                 onClick={() => handleEditSkills(tech)} 
                 variant="outline" 
                 className="w-full"
@@ -261,11 +282,11 @@ const Technicians = () => {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingSkills(false)}>
+            <Button data-testid="technician-cancel-skill-button" variant="outline" onClick={() => setEditingSkills(false)}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={handleSaveSkills} className="bg-gradient-to-r from-red-600 to-blue-600">
+            <Button data-testid="technician-save-skill-button" onClick={handleSaveSkills} className="bg-gradient-to-r from-red-600 to-blue-600">
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>

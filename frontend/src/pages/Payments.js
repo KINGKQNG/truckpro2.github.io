@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { MOCK_PAYMENTS } from '../mock/inventoryData';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -7,31 +6,51 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '../components/ui/label';
 import { CreditCard, DollarSign, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { paymentsAPI } from '../services/api';
 
 const Payments = () => {
-  const [payments, setPayments] = useState(MOCK_PAYMENTS);
+  const [payments, setPayments] = useState([]);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleProcessPayment = (paymentId, method) => {
+  const loadPayments = async () => {
+    try {
+      const response = await paymentsAPI.getAll();
+      setPayments(response.data || []);
+    } catch (error) {
+      toast({
+        title: 'Load failed',
+        description: 'Unable to load payments',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadPayments();
+  }, []);
+
+  const handleProcessPayment = async (paymentId, method) => {
     setIsProcessing(true);
-    
-    setTimeout(() => {
-      setPayments(prev => prev.map(p => 
-        p.id === paymentId 
-          ? { ...p, status: 'paid', method, paidDate: new Date().toISOString().split('T')[0] }
-          : p
-      ));
-      
+
+    try {
+      await paymentsAPI.process(paymentId, method);
+      await loadPayments();
       toast({
         title: "Payment Processed",
         description: `Payment successfully processed via ${method.replace('_', ' ')}`,
       });
-      
       setSelectedPayment(null);
+    } catch (error) {
+      toast({
+        title: 'Processing failed',
+        description: 'Unable to process payment',
+        variant: 'destructive'
+      });
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const pendingPayments = payments.filter(p => p.status === 'pending');
@@ -40,7 +59,7 @@ const Payments = () => {
   const totalPaid = paidPayments.reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="payments-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Payment Processing</h1>
         <p className="text-gray-600 mt-1">Manage customer payments and invoices</p>
@@ -98,7 +117,8 @@ const Payments = () => {
                     <p className="text-2xl font-bold text-blue-600">${payment.amount.toLocaleString()}</p>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button 
+                        <Button
+                          data-testid={`payment-process-button-${payment.id}`}
                           size="sm" 
                           className="mt-2 bg-gradient-to-r from-red-600 to-blue-600"
                           onClick={() => setSelectedPayment(payment)}
@@ -123,9 +143,11 @@ const Payments = () => {
                           <div className="space-y-2">
                             <Label>Payment Method</Label>
                             <div className="grid grid-cols-2 gap-3">
-                              <Button 
+                              <Button
+                                data-testid="payment-method-credit-card-button"
                                 variant="outline" 
                                 className="h-20"
+                                disabled={isProcessing}
                                 onClick={() => handleProcessPayment(payment.id, 'credit_card')}
                               >
                                 <div className="text-center">
@@ -133,9 +155,11 @@ const Payments = () => {
                                   <p className="text-xs">Credit Card</p>
                                 </div>
                               </Button>
-                              <Button 
+                              <Button
+                                data-testid="payment-method-cash-button"
                                 variant="outline" 
                                 className="h-20"
+                                disabled={isProcessing}
                                 onClick={() => handleProcessPayment(payment.id, 'cash')}
                               >
                                 <div className="text-center">
@@ -143,9 +167,11 @@ const Payments = () => {
                                   <p className="text-xs">Cash</p>
                                 </div>
                               </Button>
-                              <Button 
+                              <Button
+                                data-testid="payment-method-check-button"
                                 variant="outline" 
                                 className="h-20"
+                                disabled={isProcessing}
                                 onClick={() => handleProcessPayment(payment.id, 'check')}
                               >
                                 <div className="text-center">
@@ -153,9 +179,11 @@ const Payments = () => {
                                   <p className="text-xs">Check</p>
                                 </div>
                               </Button>
-                              <Button 
+                              <Button
+                                data-testid="payment-method-fleet-account-button"
                                 variant="outline" 
                                 className="h-20"
+                                disabled={isProcessing}
                                 onClick={() => handleProcessPayment(payment.id, 'fleet_account')}
                               >
                                 <div className="text-center">

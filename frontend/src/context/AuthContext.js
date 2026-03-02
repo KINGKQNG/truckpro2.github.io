@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { MOCK_USERS } from '../mock/data';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -23,20 +23,20 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (email, password) => {
-    const foundUser = MOCK_USERS.find(
-      (u) => u.email === email && u.password === password
-    );
-
-    if (foundUser) {
-      const userWithoutPassword = { ...foundUser };
-      delete userWithoutPassword.password;
-      setUser(userWithoutPassword);
-      localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-      return { success: true, user: userWithoutPassword };
+  const login = async (email, password) => {
+    try {
+      const response = await authAPI.login(email, password);
+      const { access_token, user: profile } = response.data;
+      const authUser = { ...profile, token: access_token };
+      setUser(authUser);
+      localStorage.setItem('user', JSON.stringify(authUser));
+      return { success: true, user: authUser };
+    } catch (error) {
+      return {
+        success: false,
+        error: error?.response?.data?.detail || 'Invalid email or password'
+      };
     }
-
-    return { success: false, error: 'Invalid email or password' };
   };
 
   const logout = () => {

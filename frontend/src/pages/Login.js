@@ -15,11 +15,11 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    const result = login(email, password);
+    const result = await login(email, password);
     if (result.success) {
       navigate('/dashboard');
     } else {
@@ -28,8 +28,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-red-50">
-      <Card className="w-full max-w-md mx-4">
+    <div data-testid="login-page" className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-red-50">
+      <Card data-testid="login-card" className="w-full max-w-md mx-4">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="p-3 bg-gradient-to-br from-red-600 to-blue-600 rounded-lg">
@@ -40,9 +40,9 @@ const Login = () => {
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" data-testid="login-error-alert">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
@@ -50,6 +50,7 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
+                data-testid="login-email-input"
                 id="email"
                 type="email"
                 placeholder="your@email.com"
@@ -61,6 +62,7 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
+                data-testid="login-password-input"
                 id="password"
                 type="password"
                 placeholder="Enter your password"
@@ -69,7 +71,7 @@ const Login = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700">
+            <Button data-testid="login-submit-button" type="submit" className="w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700">
               Sign In
             </Button>
           </form>

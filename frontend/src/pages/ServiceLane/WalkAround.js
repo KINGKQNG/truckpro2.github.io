@@ -6,6 +6,7 @@ import { Camera, Mic, Save, Send, AlertCircle, CheckCircle, Upload, X } from 'lu
 import { Textarea } from '../../components/ui/textarea';
 import { useToast } from '../../hooks/use-toast';
 import { Input } from '../../components/ui/input';
+import { inspectionsAPI } from '../../services/api';
 
 const WalkAround = () => {
   const { toast } = useToast();
@@ -32,28 +33,38 @@ const WalkAround = () => {
     'Scratch', 'Dent', 'Rust', 'Crack', 'Missing Part', 'Worn', 'Leak', 'Other'
   ]);
 
-  const handlePhotoUpload = (areaId, event) => {
+  const handlePhotoUpload = async (areaId, event) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      const newPhotos = Array.from(files).map(file => ({
-        name: file.name,
-        size: file.size,
-        url: URL.createObjectURL(file),
-        timestamp: new Date().toISOString()
-      }));
-      
-      setInspectionAreas(prev =>
-        prev.map(area =>
-          area.id === areaId
-            ? { ...area, photos: [...area.photos, ...newPhotos] }
-            : area
-        )
-      );
-      
-      toast({
-        title: "Photos Uploaded",
-        description: `${newPhotos.length} photo(s) added to ${inspectionAreas.find(a => a.id === areaId)?.name}`,
-      });
+      try {
+        const filesArray = Array.from(files);
+        const uploadResponse = await inspectionsAPI.uploadMedia(areaId, filesArray);
+        const newPhotos = uploadResponse.data.files.map((file, index) => ({
+          name: file.name,
+          size: file.size,
+          url: URL.createObjectURL(filesArray[index]),
+          timestamp: file.timestamp
+        }));
+
+        setInspectionAreas(prev =>
+          prev.map(area =>
+            area.id === areaId
+              ? { ...area, photos: [...area.photos, ...newPhotos] }
+              : area
+          )
+        );
+
+        toast({
+          title: "Photos Uploaded",
+          description: `${newPhotos.length} media file(s) added to ${inspectionAreas.find(a => a.id === areaId)?.name}`,
+        });
+      } catch (error) {
+        toast({
+          title: 'Upload failed',
+          description: 'Unable to upload media files',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
@@ -124,11 +135,23 @@ const WalkAround = () => {
     }
   };
 
-  const handleSaveInspection = () => {
-    toast({
-      title: "Inspection Saved",
-      description: "Walk-around inspection has been saved to repair order",
-    });
+  const handleSaveInspection = async () => {
+    try {
+      await inspectionsAPI.save({
+        vehicle: selectedVehicle,
+        areas: inspectionAreas
+      });
+      toast({
+        title: "Inspection Saved",
+        description: "Walk-around inspection has been saved to repair order",
+      });
+    } catch (error) {
+      toast({
+        title: 'Save failed',
+        description: 'Unable to save inspection',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleSendToCustomer = () => {
@@ -142,7 +165,7 @@ const WalkAround = () => {
   const flaggedCount = inspectionAreas.filter(a => a.status === 'flagged').length;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="walk-around-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Service Lane Walk-Around</h1>
         <p className="text-gray-600 mt-1">Digital tablet-based vehicle inspection</p>
@@ -224,8 +247,9 @@ const WalkAround = () => {
               <div className="flex gap-2 flex-wrap">
                 <div>
                   <Input
+                    data-testid={`walk-around-upload-input-${area.id}`}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     multiple
                     className="hidden"
                     id={`upload-${area.id}`}
@@ -233,6 +257,7 @@ const WalkAround = () => {
                   />
                   <label htmlFor={`upload-${area.id}`}>
                     <Button
+                      data-testid={`walk-around-upload-button-${area.id}`}
                       size="sm"
                       variant="outline"
                       type="button"
@@ -244,6 +269,7 @@ const WalkAround = () => {
                   </label>
                 </div>
                 <Button
+                  data-testid={`walk-around-voice-button-${area.id}`}
                   size="sm"
                   variant="outline"
                   onClick={() => handleVoiceNote(area.id)}
@@ -263,6 +289,7 @@ const WalkAround = () => {
                         className="w-full h-24 object-cover rounded-lg border"
                       />
                       <Button
+                        data-testid={`walk-around-remove-media-${area.id}-${idx}`}
                         size="sm"
                         variant="destructive"
                         className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
@@ -280,6 +307,7 @@ const WalkAround = () => {
                 <div className="flex gap-2 flex-wrap">
                   {damageTypes.map((type) => (
                     <Button
+                      data-testid={`walk-around-damage-button-${area.id}-${type.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                       key={type}
                       size="sm"
                       variant="outline"
@@ -294,6 +322,7 @@ const WalkAround = () => {
 
               {area.status === 'pending' && (
                 <Button
+                  data-testid={`walk-around-complete-area-${area.id}`}
                   className="w-full bg-gradient-to-r from-red-600 to-blue-600"
                   onClick={() => completeArea(area.id)}
                 >
@@ -308,6 +337,7 @@ const WalkAround = () => {
 
       <div className="flex gap-4">
         <Button
+          data-testid="walk-around-save-button"
           size="lg"
           variant="outline"
           onClick={handleSaveInspection}
@@ -317,6 +347,7 @@ const WalkAround = () => {
           Save Inspection
         </Button>
         <Button
+          data-testid="walk-around-send-customer-button"
           size="lg"
           onClick={handleSendToCustomer}
           className="flex-1 bg-gradient-to-r from-red-600 to-blue-600"

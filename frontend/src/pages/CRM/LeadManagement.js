@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -6,68 +6,12 @@ import { Input } from '../../components/ui/input';
 import { Phone, Mail, MessageSquare, Star, TrendingUp, User, DollarSign } from 'lucide-react';
 import { Progress } from '../../components/ui/progress';
 import { useToast } from '../../hooks/use-toast';
+import { leadsAPI } from '../../services/api';
 
 const LeadManagement = () => {
   const { toast } = useToast();
   
-  const [leads] = useState([
-    {
-      id: 'L-2025-001',
-      name: 'Robert Johnson',
-      phone: '555-0234',
-      email: 'robert@email.com',
-      source: 'Website Form',
-      score: 85,
-      status: 'hot',
-      vehicle: 'Peterbilt 579',
-      lastContact: '2 hours ago',
-      assigned: 'Sarah Martinez',
-      equity: 15000,
-      priority: 'high'
-    },
-    {
-      id: 'L-2025-002',
-      name: 'Jennifer Davis',
-      phone: '555-0567',
-      email: 'jennifer@fleet.com',
-      source: 'Trade-In Inquiry',
-      score: 92,
-      status: 'hot',
-      vehicle: 'Kenworth T680',
-      lastContact: '4 hours ago',
-      assigned: 'Mike Johnson',
-      equity: 22000,
-      priority: 'high'
-    },
-    {
-      id: 'L-2025-003',
-      name: 'David Wilson',
-      phone: '555-0890',
-      email: 'david@transport.com',
-      source: 'Phone Call',
-      score: 65,
-      status: 'warm',
-      vehicle: 'Freightliner Cascadia',
-      lastContact: '1 day ago',
-      assigned: 'Sarah Martinez',
-      equity: 8500,
-      priority: 'medium'
-    },
-    {
-      id: 'L-2025-004',
-      name: 'Lisa Anderson',
-      phone: '555-0123',
-      email: 'lisa@logistics.com',
-      source: 'Social Media',
-      score: 45,
-      status: 'cold',
-      vehicle: 'Volvo VNL',
-      lastContact: '3 days ago',
-      assigned: 'John Smith',
-      equity: 3000,
-      priority: 'low'
-    }
-  ]);
+  const [leads, setLeads] = useState([]);
 
   const [leadStats] = useState({
     total: 248,
@@ -79,6 +23,35 @@ const LeadManagement = () => {
     avgLeadScore: 67
   });
 
+  useEffect(() => {
+    const loadLeads = async () => {
+      try {
+        const response = await leadsAPI.getAll();
+        setLeads(response.data || []);
+      } catch (error) {
+        toast({
+          title: 'Load failed',
+          description: 'Unable to load leads',
+          variant: 'destructive'
+        });
+      }
+    };
+
+    loadLeads();
+  }, [toast]);
+
+  const logInteraction = async (lead, channel, message) => {
+    try {
+      await leadsAPI.logInteraction(lead.id, channel, message);
+    } catch (error) {
+      toast({
+        title: 'Interaction failed',
+        description: 'Unable to log interaction',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'hot': return 'bg-red-500';
@@ -89,6 +62,7 @@ const LeadManagement = () => {
   };
 
   const handleCall = (lead) => {
+    logInteraction(lead, 'call', 'Outbound phone call initiated');
     toast({
       title: "Initiating Call",
       description: `Calling ${lead.name} at ${lead.phone}...`,
@@ -103,6 +77,7 @@ const LeadManagement = () => {
   };
 
   const handleEmail = (lead) => {
+    logInteraction(lead, 'email', 'Email draft opened');
     toast({
       title: "Email Composer Opened",
       description: `Drafting email to ${lead.email}`,
@@ -111,6 +86,7 @@ const LeadManagement = () => {
   };
 
   const handleSMS = (lead) => {
+    logInteraction(lead, 'sms', 'SMS composer opened');
     toast({
       title: "SMS Composer Opened",
       description: `Sending text to ${lead.phone}`,
@@ -119,6 +95,7 @@ const LeadManagement = () => {
   };
 
   const handleView360 = (lead) => {
+    logInteraction(lead, 'profile_view', '360 profile viewed');
     toast({
       title: "Loading 360° Profile",
       description: `Opening complete profile for ${lead.name}`,
@@ -127,7 +104,7 @@ const LeadManagement = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="lead-management-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Lead Management & CRM</h1>
         <p className="text-gray-600 mt-1">Intelligent lead scoring and omnichannel communication</p>
@@ -239,6 +216,7 @@ const LeadManagement = () => {
 
                 <div className="ml-6 space-y-2">
                   <Button
+                    data-testid={`lead-call-button-${lead.id}`}
                     size="sm"
                     onClick={() => handleCall(lead)}
                     className="w-full bg-green-600 hover:bg-green-700"
@@ -247,6 +225,7 @@ const LeadManagement = () => {
                     Call
                   </Button>
                   <Button
+                    data-testid={`lead-email-button-${lead.id}`}
                     size="sm"
                     variant="outline"
                     onClick={() => handleEmail(lead)}
@@ -256,6 +235,7 @@ const LeadManagement = () => {
                     Email
                   </Button>
                   <Button
+                    data-testid={`lead-sms-button-${lead.id}`}
                     size="sm"
                     variant="outline"
                     onClick={() => handleSMS(lead)}
@@ -265,6 +245,7 @@ const LeadManagement = () => {
                     SMS
                   </Button>
                   <Button
+                    data-testid={`lead-360-button-${lead.id}`}
                     size="sm"
                     className="w-full bg-gradient-to-r from-red-600 to-blue-600"
                     onClick={() => handleView360(lead)}

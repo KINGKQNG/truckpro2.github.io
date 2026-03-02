@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Download, RefreshCw, TrendingUp, TrendingDown, DollarSign, Package, AlertTriangle } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { reportsAPI } from '../services/api';
 
 const AdvancedReporting = () => {
   const { toast } = useToast();
   
-  const [financialData] = useState({
+  const [financialData, setFinancialData] = useState({
     costCenter: {
       id: 'CC-SERVICE-001',
       actualCosts: 125450,
@@ -46,6 +47,19 @@ const AdvancedReporting = () => {
     { location: 'Service Bay Storage', scheduled: '2025-01-18', status: 'in_progress', items: 34, lastCount: '2024-12-20' }
   ]);
 
+  useEffect(() => {
+    const loadAdvanced = async () => {
+      try {
+        const response = await reportsAPI.getAdvanced();
+        setFinancialData((prev) => ({ ...prev, ...response.data }));
+      } catch (error) {
+        // Keep default values
+      }
+    };
+
+    loadAdvanced();
+  }, []);
+
   const handleSyncSAP = () => {
     toast({
       title: "Syncing with SAP S/4HANA",
@@ -68,7 +82,7 @@ const AdvancedReporting = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="advanced-reporting-page">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Advanced Reporting & Controlling</h1>

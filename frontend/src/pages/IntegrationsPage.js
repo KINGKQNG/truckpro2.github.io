@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -9,38 +9,11 @@ import { Textarea } from '../components/ui/textarea';
 import { Database, RefreshCw, Settings, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../hooks/use-toast';
+import { integrationsAPI } from '../services/api';
 
 const IntegrationsPage = () => {
   const { toast } = useToast();
-  const [integrations, setIntegrations] = useState([
-    {
-      id: '1',
-      system_type: 'sap',
-      name: 'SAP ERP Production',
-      endpoint_url: 'https://sap.company.com:44300',
-      isActive: true,
-      lastSync: '2025-01-14T10:30:00',
-      status: 'connected'
-    },
-    {
-      id: '2',
-      system_type: 'logile',
-      name: 'Logile Time & Attendance',
-      endpoint_url: 'https://logile.timetracking.com/api',
-      isActive: true,
-      lastSync: '2025-01-14T09:15:00',
-      status: 'connected'
-    },
-    {
-      id: '3',
-      system_type: 'dos_matrix',
-      name: 'Legacy Parts System (DOS Matrix)',
-      endpoint_url: '192.168.1.100:5000',
-      isActive: false,
-      lastSync: null,
-      status: 'disconnected'
-    }
-  ]);
+  const [integrations, setIntegrations] = useState([]);
 
   const [newIntegration, setNewIntegration] = useState({
     system_type: 'sap',
@@ -50,6 +23,23 @@ const IntegrationsPage = () => {
     password: '',
     api_key: ''
   });
+
+  const loadIntegrations = async () => {
+    try {
+      const response = await integrationsAPI.getAll();
+      setIntegrations(response.data || []);
+    } catch (error) {
+      toast({
+        title: 'Load failed',
+        description: 'Unable to load integrations',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadIntegrations();
+  }, [toast]);
 
   const getSystemIcon = (type) => {
     return <Database className="h-8 w-8" />;
@@ -64,69 +54,67 @@ const IntegrationsPage = () => {
     }
   };
 
-  const handleTestConnection = (id) => {
-    // Mock test - will connect to backend
-    toast({
-      title: "Testing Connection",
-      description: "Testing integration connection...",
-    });
-    
-    setTimeout(() => {
+  const handleTestConnection = async (id) => {
+    try {
+      await integrationsAPI.test(id);
+      await loadIntegrations();
       toast({
         title: "Connection Successful",
         description: "Integration is working properly",
       });
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: 'Connection failed',
+        description: 'Unable to connect integration',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleSync = (id, syncType) => {
-    toast({
-      title: "Sync Started",
-      description: `Syncing ${syncType} data...`,
-    });
-    
-    setTimeout(() => {
-      setIntegrations(prev =>
-        prev.map(i =>
-          i.id === id ? { ...i, lastSync: new Date().toISOString() } : i
-        )
-      );
-      
+  const handleSync = async (id, syncType) => {
+    try {
+      await integrationsAPI.sync(id, syncType);
+      await loadIntegrations();
       toast({
         title: "Sync Complete",
         description: "Data synchronized successfully",
       });
-    }, 2000);
+    } catch (error) {
+      toast({
+        title: 'Sync failed',
+        description: 'Unable to sync integration',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleAddIntegration = () => {
-    const newInt = {
-      ...newIntegration,
-      id: Date.now().toString(),
-      isActive: false,
-      lastSync: null,
-      status: 'pending'
-    };
-    
-    setIntegrations(prev => [...prev, newInt]);
-    
-    toast({
-      title: "Integration Added",
-      description: `${newIntegration.name} has been added`,
-    });
-    
-    setNewIntegration({
-      system_type: 'sap',
-      name: '',
-      endpoint_url: '',
-      username: '',
-      password: '',
-      api_key: ''
-    });
+  const handleAddIntegration = async () => {
+    try {
+      await integrationsAPI.create(newIntegration);
+      await loadIntegrations();
+      toast({
+        title: "Integration Added",
+        description: `${newIntegration.name} has been added`,
+      });
+      setNewIntegration({
+        system_type: 'sap',
+        name: '',
+        endpoint_url: '',
+        username: '',
+        password: '',
+        api_key: ''
+      });
+    } catch (error) {
+      toast({
+        title: 'Create failed',
+        description: 'Unable to add integration',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="integrations-page">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">System Integrations</h1>
@@ -134,7 +122,7 @@ const IntegrationsPage = () => {
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-red-600 to-blue-600">
+            <Button data-testid="integrations-add-button" className="bg-gradient-to-r from-red-600 to-blue-600">
               <Plus className="h-4 w-4 mr-2" />
               Add Integration
             </Button>
@@ -208,7 +196,7 @@ const IntegrationsPage = () => {
                 </>
               )}
 
-              <Button onClick={handleAddIntegration} className="w-full bg-gradient-to-r from-red-600 to-blue-600">
+              <Button data-testid="integrations-submit-button" onClick={handleAddIntegration} className="w-full bg-gradient-to-r from-red-600 to-blue-600">
                 Add Integration
               </Button>
             </div>
@@ -343,6 +331,7 @@ const IntegrationsPage = () => {
 
                 <div className="border-t pt-4 flex gap-2">
                   <Button
+                    data-testid={`integration-test-button-${integration.id}`}
                     variant="outline"
                     size="sm"
                     onClick={() => handleTestConnection(integration.id)}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -9,14 +9,14 @@ import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
 import { Calendar as CalendarIcon, Clock, User, ShoppingCart, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { MOCK_TECHNICIANS } from '../../mock/inventoryData';
-import { MOCK_APPOINTMENTS } from '../../mock/data';
+import { appointmentsAPI, techniciansAPI } from '../../services/api';
 
 const OnlineScheduler = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [date, setDate] = useState(new Date());
-  const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS);
+  const [appointments, setAppointments] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
   const [appointmentData, setAppointmentData] = useState({
     email: '',
     phone: '',
@@ -42,12 +42,33 @@ const OnlineScheduler = () => {
     '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'
   ]);
 
-  const [advisors] = useState(MOCK_TECHNICIANS.map(t => ({
+  const advisors = useMemo(() => technicians.map((t) => ({
     id: t.id,
     name: t.name,
     image: '👨‍💼',
     rating: (t.efficiency / 20).toFixed(1)
-  })));
+  })), [technicians]);
+
+  useEffect(() => {
+    const loadSchedulerData = async () => {
+      try {
+        const [appointmentsResponse, techniciansResponse] = await Promise.all([
+          appointmentsAPI.getAll(),
+          techniciansAPI.getAll()
+        ]);
+        setAppointments(appointmentsResponse.data || []);
+        setTechnicians(techniciansResponse.data || []);
+      } catch (error) {
+        toast({
+          title: 'Load failed',
+          description: 'Unable to load scheduler data',
+          variant: 'destructive'
+        });
+      }
+    };
+
+    loadSchedulerData();
+  }, [toast]);
 
   const getTechWorkload = (techId, selectedDate, selectedTime) => {
     const dateStr = selectedDate.toISOString().split('T')[0];
@@ -91,37 +112,26 @@ const OnlineScheduler = () => {
     }, 0);
   };
 
-  const handleSubmit = () => {
-    const estimatedDuration = getEstimatedDuration();
-    const selectedAdvisor = advisors.find(a => a.id === appointmentData.advisor);
-    
-    const newAppointment = {
-      id: `apt${appointments.length + 1}`,
-      customerId: 'new',
-      customerName: appointmentData.email.split('@')[0],
-      email: appointmentData.email,
-      phone: appointmentData.phone,
-      date: date.toISOString().split('T')[0],
-      time: appointmentData.time,
-      service: appointmentData.services.map(id => availableServices.find(s => s.id === id)?.name).join(', '),
-      status: 'scheduled',
-      technicianId: appointmentData.advisor,
-      technician: selectedAdvisor?.name,
-      estimatedCost: getTotalCost(),
-      estimatedDuration: estimatedDuration,
-      transportation: appointmentData.transportation,
-      concerns: appointmentData.concerns,
-      mileage: appointmentData.mileage
-    };
-    
-    setAppointments(prev => [...prev, newAppointment]);
-    
-    toast({
-      title: "Appointment Booked!",
-      description: `Confirmation sent to ${appointmentData.email}. Work order created.`,
-    });
-    
-    setStep(5);
+  const handleSubmit = async () => {
+    try {
+      await appointmentsAPI.create({
+        ...appointmentData,
+        date: date.toISOString().split('T')[0]
+      });
+      const refreshed = await appointmentsAPI.getAll();
+      setAppointments(refreshed.data || []);
+      toast({
+        title: "Appointment Booked!",
+        description: `Confirmation sent to ${appointmentData.email}. Work order created.`,
+      });
+      setStep(5);
+    } catch (error) {
+      toast({
+        title: 'Booking failed',
+        description: 'Unable to book appointment',
+        variant: 'destructive'
+      });
+    }
   };
 
   const getAvailableAdvisors = () => {
@@ -133,7 +143,7 @@ const OnlineScheduler = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 space-y-6 max-w-6xl mx-auto" data-testid="online-scheduler-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Online Service Scheduler</h1>
         <p className="text-gray-600 mt-1">Book your service appointment - Real-time tech availability</p>
@@ -170,6 +180,7 @@ const OnlineScheduler = () => {
               <div>
                 <Label>Email Address</Label>
                 <Input
+                  data-testid="scheduler-email-input"
                   type="email"
                   value={appointmentData.email}
                   onChange={(e) => setAppointmentData(prev => ({ ...prev, email: e.target.value }))}
@@ -179,6 +190,7 @@ const OnlineScheduler = () => {
               <div>
                 <Label>Phone Number</Label>
                 <Input
+                  data-testid="scheduler-phone-input"
                   type="tel"
                   value={appointmentData.phone}
                   onChange={(e) => setAppointmentData(prev => ({ ...prev, phone: e.target.value }))}
@@ -189,13 +201,14 @@ const OnlineScheduler = () => {
             <div>
               <Label>Current Mileage</Label>
               <Input
+                data-testid="scheduler-mileage-input"
                 type="number"
                 value={appointmentData.mileage}
                 onChange={(e) => setAppointmentData(prev => ({ ...prev, mileage: e.target.value }))}
                 placeholder="Enter current mileage"
               />
             </div>
-            <Button onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-red-600 to-blue-600">
+            <Button data-testid="scheduler-step1-continue-button" onClick={() => setStep(2)} className="w-full bg-gradient-to-r from-red-600 to-blue-600">
               Continue
             </Button>
           </CardContent>
@@ -217,6 +230,7 @@ const OnlineScheduler = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {availableServices.map((service) => (
                 <div
+                  data-testid={`scheduler-service-option-${service.id}`}
                   key={service.id}
                   onClick={() => toggleService(service.id)}
                   className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
@@ -260,10 +274,10 @@ const OnlineScheduler = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={() => setStep(1)} variant="outline" className="flex-1">
+              <Button data-testid="scheduler-step2-back-button" onClick={() => setStep(1)} variant="outline" className="flex-1">
                 Back
               </Button>
-              <Button onClick={() => setStep(3)} className="flex-1 bg-gradient-to-r from-red-600 to-blue-600">
+              <Button data-testid="scheduler-step2-continue-button" onClick={() => setStep(3)} className="flex-1 bg-gradient-to-r from-red-600 to-blue-600">
                 Continue
               </Button>
             </div>
@@ -284,7 +298,7 @@ const OnlineScheduler = () => {
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={(selectedDate) => setDate(selectedDate || new Date())}
                 className="rounded-md border"
               />
             </CardContent>
@@ -302,6 +316,7 @@ const OnlineScheduler = () => {
                 <div className="grid grid-cols-3 gap-2">
                   {timeSlots.map((time) => (
                     <Button
+                      data-testid={`scheduler-time-slot-${time.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`}
                       key={time}
                       variant={appointmentData.time === time ? 'default' : 'outline'}
                       onClick={() => setAppointmentData(prev => ({ ...prev, time }))}
@@ -327,6 +342,7 @@ const OnlineScheduler = () => {
                     const workload = getTechWorkload(advisor.id, date, appointmentData.time);
                     return (
                       <div
+                        data-testid={`scheduler-advisor-option-${advisor.id}`}
                         key={advisor.id}
                         onClick={() => setAppointmentData(prev => ({ ...prev, advisor: advisor.id }))}
                         className={`p-3 border-2 rounded-lg cursor-pointer flex items-center justify-between ${
@@ -386,10 +402,11 @@ const OnlineScheduler = () => {
             </Card>
 
             <div className="flex gap-2">
-              <Button onClick={() => setStep(2)} variant="outline" className="flex-1">
+              <Button data-testid="scheduler-step3-back-button" onClick={() => setStep(2)} variant="outline" className="flex-1">
                 Back
               </Button>
               <Button 
+                data-testid="scheduler-step3-review-button"
                 onClick={() => setStep(4)} 
                 className="flex-1 bg-gradient-to-r from-red-600 to-blue-600"
                 disabled={!appointmentData.advisor || !appointmentData.time}
@@ -447,10 +464,10 @@ const OnlineScheduler = () => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={() => setStep(3)} variant="outline" className="flex-1">
+              <Button data-testid="scheduler-step4-back-button" onClick={() => setStep(3)} variant="outline" className="flex-1">
                 Back
               </Button>
-              <Button onClick={handleSubmit} className="flex-1 bg-gradient-to-r from-red-600 to-blue-600">
+              <Button data-testid="scheduler-confirm-button" onClick={handleSubmit} className="flex-1 bg-gradient-to-r from-red-600 to-blue-600">
                 <CheckCircle className="h-5 w-5 mr-2" />
                 Confirm Appointment
               </Button>
@@ -470,7 +487,7 @@ const OnlineScheduler = () => {
             <p className="text-sm text-gray-500 mb-4">
               Work order created • You will receive a reminder 24 hours before
             </p>
-            <Button onClick={() => window.location.reload()} className="bg-gradient-to-r from-red-600 to-blue-600">
+            <Button data-testid="scheduler-new-appointment-button" onClick={() => window.location.reload()} className="bg-gradient-to-r from-red-600 to-blue-600">
               Schedule Another Appointment
             </Button>
           </CardContent>

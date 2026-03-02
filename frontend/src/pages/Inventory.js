@@ -1,15 +1,36 @@
-import React, { useState } from 'react';
-import { MOCK_INVENTORY, MOCK_PURCHASE_ORDERS } from '../mock/inventoryData';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Package, AlertTriangle, ShoppingCart, CheckCircle } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { inventoryAPI } from '../services/api';
 
 const Inventory = () => {
-  const [inventory, setInventory] = useState(MOCK_INVENTORY);
-  const [purchaseOrders, setPurchaseOrders] = useState(MOCK_PURCHASE_ORDERS);
+  const [inventory, setInventory] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const { toast } = useToast();
+
+  const loadInventoryData = async () => {
+    try {
+      const [inventoryResponse, poResponse] = await Promise.all([
+        inventoryAPI.getAll(),
+        inventoryAPI.getPurchaseOrders()
+      ]);
+      setInventory(inventoryResponse.data || []);
+      setPurchaseOrders(poResponse.data || []);
+    } catch (error) {
+      toast({
+        title: 'Load failed',
+        description: 'Unable to load inventory data',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadInventoryData();
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -20,31 +41,30 @@ const Inventory = () => {
     }
   };
 
-  const handleAutoReplenish = (item) => {
-    const quantity = item.parLevel - item.quantity;
-    const newPO = {
-      id: `po${purchaseOrders.length + 1}`,
-      orderNumber: `PO-2025-${String(purchaseOrders.length + 3).padStart(3, '0')}`,
-      supplier: item.supplier,
-      status: 'pending',
-      orderDate: new Date().toISOString().split('T')[0],
-      expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      items: [{ ...item, quantity, total: quantity * item.unitCost }],
-      totalAmount: quantity * item.unitCost
-    };
-    
-    setPurchaseOrders([...purchaseOrders, newPO]);
-    toast({
-      title: "Purchase Order Created",
-      description: `PO-${newPO.orderNumber} created for ${quantity} units of ${item.name}`,
-    });
+  const handleAutoReplenish = async (item) => {
+    try {
+      const response = await inventoryAPI.autoReplenish(item.id);
+      await loadInventoryData();
+      toast({
+        title: "Purchase Order Created",
+        description: response.data.purchaseOrder
+          ? `${response.data.purchaseOrder.orderNumber} created for ${item.name}`
+          : `No replenishment needed for ${item.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Replenish failed',
+        description: 'Unable to create purchase order',
+        variant: 'destructive'
+      });
+    }
   };
 
   const lowStockItems = inventory.filter(i => i.status === 'low_stock' || i.status === 'critical');
   const totalValue = inventory.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="inventory-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
         <p className="text-gray-600 mt-1">Track parts, manage stock levels, and auto-replenishment</p>
@@ -100,7 +120,7 @@ const Inventory = () => {
           <CardContent>
             <div className="space-y-3">
               {inventory.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50" data-testid={`inventory-item-${item.id}`}>
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold">{item.name}</h3>
@@ -118,7 +138,8 @@ const Inventory = () => {
                   <div className="text-right">
                     <p className="text-sm font-medium">${item.unitCost.toLocaleString()}/unit</p>
                     {(item.status === 'low_stock' || item.status === 'critical') && (
-                      <Button 
+                      <Button
+                        data-testid={`inventory-auto-replenish-${item.id}`}
                         size="sm" 
                         variant="outline"
                         className="mt-2"

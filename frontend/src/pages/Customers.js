@@ -1,43 +1,65 @@
-import React, { useState } from 'react';
-import { MOCK_CUSTOMERS, MOCK_TRUCKS, MOCK_WORK_ORDERS } from '../mock/data';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Building2, User, Phone, Mail, TruckIcon, Eye, Edit, History } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { customersAPI } from '../services/api';
 
 const Customers = () => {
-  const [customers] = useState(MOCK_CUSTOMERS);
+  const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerTrucks, setCustomerTrucks] = useState([]);
+  const [customerWorkOrders, setCustomerWorkOrders] = useState([]);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleViewDetails = (customer) => {
-    setSelectedCustomer(customer);
-    setIsDetailOpen(true);
-  };
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const response = await customersAPI.getAll();
+        setCustomers(response.data);
+      } catch (error) {
+        toast({
+          title: 'Load failed',
+          description: 'Unable to load customers',
+          variant: 'destructive'
+        });
+      }
+    };
 
-  const getCustomerTrucks = (customerId) => {
-    return MOCK_TRUCKS.filter(t => t.customerId === customerId);
-  };
+    loadCustomers();
+  }, [toast]);
 
-  const getCustomerWorkOrders = (customerId) => {
-    return MOCK_WORK_ORDERS.filter(wo => wo.customerId === customerId);
+  const handleViewDetails = async (customer) => {
+    try {
+      const response = await customersAPI.getDetail(customer.id);
+      setSelectedCustomer(response.data.customer);
+      setCustomerTrucks(response.data.trucks || []);
+      setCustomerWorkOrders(response.data.workOrders || []);
+      setIsDetailOpen(true);
+    } catch (error) {
+      toast({
+        title: 'Load failed',
+        description: 'Unable to load customer details',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="customers-page">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Customers & Fleets</h1>
+          <h1 className="text-3xl font-bold text-gray-900" data-testid="customers-title">Customers & Fleets</h1>
           <p className="text-gray-600 mt-1">Manage customer accounts and fleet information</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {customers.map((customer) => (
-          <Card key={customer.id} className="hover:shadow-lg transition-all duration-300">
+          <Card key={customer.id} className="hover:shadow-lg transition-all duration-300" data-testid={`customer-card-${customer.id}`}>
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
@@ -79,7 +101,7 @@ const Customers = () => {
                   <span className="font-medium">{new Date(customer.joinedDate).toLocaleDateString()}</span>
                 </div>
               </div>
-              <Button variant="outline" className="w-full mt-4" onClick={() => handleViewDetails(customer)}>
+              <Button data-testid={`customer-view-button-${customer.id}`} variant="outline" className="w-full mt-4" onClick={() => handleViewDetails(customer)}>
                 <Eye className="h-4 w-4 mr-2" />
                 View Details
               </Button>
@@ -118,10 +140,10 @@ const Customers = () => {
               <div>
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                   <TruckIcon className="h-5 w-5" />
-                  Fleet Vehicles ({getCustomerTrucks(selectedCustomer.id).length})
+                  Fleet Vehicles ({customerTrucks.length})
                 </h4>
                 <div className="space-y-2">
-                  {getCustomerTrucks(selectedCustomer.id).map(truck => (
+                  {customerTrucks.map(truck => (
                     <div key={truck.id} className="p-3 border rounded-lg flex justify-between items-center">
                       <div>
                         <p className="font-medium">{truck.year} {truck.make} {truck.model}</p>
@@ -139,10 +161,10 @@ const Customers = () => {
               <div>
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                   <History className="h-5 w-5" />
-                  Service History ({getCustomerWorkOrders(selectedCustomer.id).length})
+                  Service History ({customerWorkOrders.length})
                 </h4>
                 <div className="space-y-2">
-                  {getCustomerWorkOrders(selectedCustomer.id).map(wo => (
+                  {customerWorkOrders.map(wo => (
                     <div key={wo.id} className="p-3 border rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
@@ -168,10 +190,10 @@ const Customers = () => {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
+                <Button data-testid="customer-detail-close-button" variant="outline" onClick={() => setIsDetailOpen(false)}>
                   Close
                 </Button>
-                <Button className="bg-gradient-to-r from-red-600 to-blue-600">
+                <Button data-testid="customer-detail-edit-button" className="bg-gradient-to-r from-red-600 to-blue-600">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Customer
                 </Button>

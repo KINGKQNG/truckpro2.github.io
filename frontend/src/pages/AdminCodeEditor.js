@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Code, Save, Eye, RefreshCw, Download, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useToast } from '../hooks/use-toast';
+import { codeEditorAPI } from '../services/api';
 
 const AdminCodeEditor = () => {
   const { toast } = useToast();
@@ -120,11 +121,35 @@ const validateForm = (data) => {
   return true;
 };`);
 
-  const handleSaveCode = () => {
-    toast({
-      title: "Code Saved",
-      description: `Changes saved for ${pages.find(p => p.id === selectedPage)?.name}`,
-    });
+  useEffect(() => {
+    const loadPageCode = async () => {
+      try {
+        const response = await codeEditorAPI.getPage(selectedPage);
+        if (response.data.jsCode) setJsCode(response.data.jsCode);
+        if (response.data.cssCode) setCssCode(response.data.cssCode);
+        if (response.data.actionCode) setActionCode(response.data.actionCode);
+      } catch (error) {
+        // Keep existing defaults
+      }
+    };
+
+    loadPageCode();
+  }, [selectedPage]);
+
+  const handleSaveCode = async () => {
+    try {
+      await codeEditorAPI.savePage(selectedPage, { jsCode, cssCode, actionCode });
+      toast({
+        title: "Code Saved",
+        description: `Changes saved for ${pages.find(p => p.id === selectedPage)?.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Save failed',
+        description: 'Unable to save code changes',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handlePreview = () => {
@@ -149,22 +174,22 @@ const validateForm = (data) => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="admin-code-editor-page">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Code Editor</h1>
           <p className="text-gray-600 mt-1">Customize pages, components, and button actions</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport}>
+          <Button data-testid="code-editor-export-button" variant="outline" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" onClick={handlePreview}>
+          <Button data-testid="code-editor-preview-button" variant="outline" onClick={handlePreview}>
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button onClick={handleSaveCode} className="bg-gradient-to-r from-red-600 to-blue-600">
+          <Button data-testid="code-editor-save-button" onClick={handleSaveCode} className="bg-gradient-to-r from-red-600 to-blue-600">
             <Save className="h-4 w-4 mr-2" />
             Save Changes
           </Button>

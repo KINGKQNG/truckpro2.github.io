@@ -1,13 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { MOCK_DAILY_REPORTS } from '../mock/inventoryData';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { DollarSign, Wrench, TrendingUp, Users } from 'lucide-react';
+import { reportsAPI } from '../services/api';
 
 const Reports = () => {
-  const { today, week, topServices } = MOCK_DAILY_REPORTS;
+  const [today, setToday] = useState(MOCK_DAILY_REPORTS.today);
+  const { week, topServices } = MOCK_DAILY_REPORTS;
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        const response = await reportsAPI.getDaily();
+        setToday(response.data.today || MOCK_DAILY_REPORTS.today);
+      } catch (error) {
+        setToday(MOCK_DAILY_REPORTS.today);
+      }
+    };
+
+    loadReports();
+  }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" data-testid="reports-page">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Daily Reports & Analytics</h1>
         <p className="text-gray-600 mt-1">Track daily performance and sales statistics</p>

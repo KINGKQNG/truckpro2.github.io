@@ -93,20 +93,37 @@ const LeadManagement = () => {
       title: "Initiating Call",
       description: `Calling ${lead.name} at ${lead.phone}...`,
     });
+    // Simulate call integration
+    setTimeout(() => {
+      toast({
+        title: "Call Connected",
+        description: "Call duration tracking started",
+      });
+    }, 2000);
   };
 
   const handleEmail = (lead) => {
     toast({
-      title: "Email Composer",
-      description: `Opening email to ${lead.email}`,
+      title: "Email Composer Opened",
+      description: `Drafting email to ${lead.email}`,
     });
+    // In real implementation, this would open email composer
   };
 
   const handleSMS = (lead) => {
     toast({
-      title: "SMS Composer",
+      title: "SMS Composer Opened",
       description: `Sending text to ${lead.phone}`,
     });
+    // In real implementation, this would open SMS interface
+  };
+
+  const handleView360 = (lead) => {
+    toast({
+      title: "Loading 360° Profile",
+      description: `Opening complete profile for ${lead.name}`,
+    });
+    // In real implementation, navigate to detailed profile
   };
 
   return (

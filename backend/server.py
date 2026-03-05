@@ -1,3 +1,4 @@
+import hashlib
 import os
 import uuid
 from datetime import datetime, timezone
@@ -1863,15 +1864,16 @@ async def diesel_parts_search(
     if make:
         filtered = [p for p in filtered if make in p.get("make", [])] or filtered
     if not filtered:
+        _h = int(hashlib.md5(q.encode()).hexdigest(), 16)
         filtered = [
             {
-                "partNumber": f"DL-{abs(hash(q)) % 9000 + 1000}",
+                "partNumber": f"DL-{_h % 9000 + 1000}",
                 "name": f"{q.title()} Assembly",
                 "category": "General",
                 "make": [make or "All"],
                 "oemNumbers": [],
                 "description": f"OEM replacement {q} assembly",
-                "price": round(50 + abs(hash(q)) % 450, 2),
+                "price": round(50 + _h % 450, 2),
                 "availability": "order",
                 "specifications": {},
             }

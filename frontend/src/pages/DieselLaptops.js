@@ -903,7 +903,7 @@ const DieselLaptops = () => {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Diesel Laptops</h1>
-          <p className="text-gray-600 mt-0.5">Professional truck diagnostic &amp; repair information system</p>
+          <p className="text-gray-600 mt-0.5">Professional truck diagnostic & repair information system</p>
         </div>
       </div>
 

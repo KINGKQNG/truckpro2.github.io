@@ -214,61 +214,6 @@ const LeadManagement = () => {
   const [is360Open, setIs360Open] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
 
-  // Helper - Returns true if last contact within 30 days
-  const isRecentContact = (lead) => {
-    const last = lead.lastContact ? new Date(lead.lastContact) : null;
-    if (!last) return false;
-    const daysAgo = new Date();
-    daysAgo.setDate(daysAgo.getDate() - 30);
-    return last >= daysAgo;
-  };
-
-  // Modal show handler
-  const handleView360 = (lead) => {
-    setSelectedLead(lead);
-    setIs360Open(true);
-    logInteraction(lead, 'profile_view', '360 profile viewed');
-  };
-
-  return (
-    <>
-      {/* Your lead grid and buttons... */}
-      <Dialog open={is360Open} onOpenChange={setIs360Open}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedLead?.name} – 360° Profile Overview (Last 30 Days)
-            </DialogTitle>
-            <DialogDescription>
-              Quick customer summary based on their latest status and activity.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedLead ? (
-            <div>
-              <p><strong>Status:</strong> {selectedLead.status}</p>
-              <p><strong>Lead Score:</strong> {selectedLead.score}</p>
-              <p><strong>Source:</strong> {selectedLead.source}</p>
-              <p><strong>Assigned To:</strong> {selectedLead.assigned}</p>
-              <p><strong>Interested In:</strong> {selectedLead.vehicle}</p>
-              <p><strong>Trade Equity:</strong> ${selectedLead.equity?.toLocaleString()}</p>
-              <p>
-                <strong>Last Contact:</strong> {" "}
-                {selectedLead.lastContact
-                  ? `${new Date(selectedLead.lastContact).toLocaleDateString()}`
-                  : "No contact recorded"}
-                {isRecentContact(selectedLead) ? " (within last 30 days)" : " (no recent contact)"}
-              </p>
-            </div>
-          ) : <div>No lead selected.</div>}
-          <DialogFooter>
-            <button onClick={() => setIs360Open(false)}>Close</button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
-export default LeadManagement;
 
 };
 

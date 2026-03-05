@@ -1,7 +1,12 @@
 import axios from 'axios';
+import * as mockApi from './mockApi';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API_BASE = `${BACKEND_URL}/api`;
+const USE_MOCK = !BACKEND_URL;
+
+// ── Real axios implementation (used when REACT_APP_BACKEND_URL is set) ────────
+
+const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : '/api';
 
 const getToken = () => {
   const user = localStorage.getItem('user');
@@ -28,11 +33,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const authAPI = {
+const realAuthAPI = {
   login: (email, password) => api.post('/auth/login', { email, password })
 };
 
-export const workOrdersAPI = {
+const realWorkOrdersAPI = {
   getAll: (status = null) => api.get('/work-orders', { params: status ? { status } : {} }),
   create: (data) => api.post('/work-orders', data),
   updateStatus: (id, status) => api.put(`/work-orders/${id}/status`, { status }),
@@ -41,30 +46,30 @@ export const workOrdersAPI = {
   remove: (id) => api.delete(`/work-orders/${id}`)
 };
 
-export const dashboardAPI = {
+const realDashboardAPI = {
   getSummary: () => api.get('/dashboard/summary')
 };
 
-export const customersAPI = {
+const realCustomersAPI = {
   getAll: () => api.get('/customers'),
   getDetail: (id) => api.get(`/customers/${id}`)
 };
 
-export const trucksAPI = {
+const realTrucksAPI = {
   getAll: (customerId = null) => api.get('/trucks', { params: customerId ? { customer_id: customerId } : {} })
 };
 
-export const techniciansAPI = {
+const realTechniciansAPI = {
   getAll: () => api.get('/technicians'),
   updateSkills: (id, skillLevels) => api.put(`/technicians/${id}/skills`, { skillLevels })
 };
 
-export const appointmentsAPI = {
+const realAppointmentsAPI = {
   getAll: (date = null) => api.get('/appointments', { params: date ? { date } : {} }),
   create: (payload) => api.post('/appointments', payload)
 };
 
-export const inspectionsAPI = {
+const realInspectionsAPI = {
   uploadMedia: (areaId, files) => {
     const formData = new FormData();
     formData.append('areaId', areaId);
@@ -76,52 +81,74 @@ export const inspectionsAPI = {
   save: (payload) => api.post('/inspections', payload)
 };
 
-export const inventoryAPI = {
+const realInventoryAPI = {
   getAll: () => api.get('/inventory'),
   getPurchaseOrders: () => api.get('/purchase-orders'),
   autoReplenish: (itemId) => api.post(`/inventory/${itemId}/replenish`)
 };
 
-export const paymentsAPI = {
+const realPaymentsAPI = {
   getAll: () => api.get('/payments'),
   process: (paymentId, method) => api.post(`/payments/${paymentId}/process`, { method })
 };
 
-export const usersAPI = {
+const realUsersAPI = {
   getAll: () => api.get('/users'),
   updateTiles: (userId, tiles) => api.put(`/users/${userId}/tiles`, tiles)
 };
 
-export const leadsAPI = {
+const realLeadsAPI = {
   getAll: () => api.get('/leads'),
   logInteraction: (leadId, channel, note = '') => api.post(`/leads/${leadId}/interactions`, { channel, note })
 };
 
-export const reportsAPI = {
+const realReportsAPI = {
   getDaily: () => api.get('/reports/daily'),
   getAdvanced: () => api.get('/reports/advanced')
 };
 
-export const integrationsAPI = {
+const realIntegrationsAPI = {
   getAll: () => api.get('/integrations'),
   create: (payload) => api.post('/integrations', payload),
   test: (id) => api.post(`/integrations/${id}/test`),
   sync: (id, syncType) => api.post(`/integrations/${id}/sync`, { syncType })
 };
 
-export const codeEditorAPI = {
+const realCodeEditorAPI = {
   getPage: (pageId) => api.get(`/admin/code-editor/${pageId}`),
   savePage: (pageId, payload) => api.put(`/admin/code-editor/${pageId}`, payload)
 };
 
-export const obdAPI = {
+const realObdAPI = {
   scan: () => api.post('/obd/scan'),
   createRepairOrder: (scanData) => api.post('/obd/create-repair-order', { scanData })
 };
 
-export const dieselLaptopsAPI = {
+const realDieselLaptopsAPI = {
   lookupDTC: (code, make, model) => api.get('/diesel-laptops/dtc', { params: { code, make, model } }),
   searchParts: (search, make) => api.get('/diesel-laptops/parts/search', { params: { q: search, make } })
 };
+
+// ── Conditional exports ───────────────────────────────────────────────────────
+// When REACT_APP_BACKEND_URL is not set, all exports use the mock implementation
+// so the app works on GitHub Pages without a backend.
+
+export const authAPI = USE_MOCK ? mockApi.authAPI : realAuthAPI;
+export const workOrdersAPI = USE_MOCK ? mockApi.workOrdersAPI : realWorkOrdersAPI;
+export const dashboardAPI = USE_MOCK ? mockApi.dashboardAPI : realDashboardAPI;
+export const customersAPI = USE_MOCK ? mockApi.customersAPI : realCustomersAPI;
+export const trucksAPI = USE_MOCK ? mockApi.trucksAPI : realTrucksAPI;
+export const techniciansAPI = USE_MOCK ? mockApi.techniciansAPI : realTechniciansAPI;
+export const appointmentsAPI = USE_MOCK ? mockApi.appointmentsAPI : realAppointmentsAPI;
+export const inspectionsAPI = USE_MOCK ? mockApi.inspectionsAPI : realInspectionsAPI;
+export const inventoryAPI = USE_MOCK ? mockApi.inventoryAPI : realInventoryAPI;
+export const paymentsAPI = USE_MOCK ? mockApi.paymentsAPI : realPaymentsAPI;
+export const usersAPI = USE_MOCK ? mockApi.usersAPI : realUsersAPI;
+export const leadsAPI = USE_MOCK ? mockApi.leadsAPI : realLeadsAPI;
+export const reportsAPI = USE_MOCK ? mockApi.reportsAPI : realReportsAPI;
+export const integrationsAPI = USE_MOCK ? mockApi.integrationsAPI : realIntegrationsAPI;
+export const codeEditorAPI = USE_MOCK ? mockApi.codeEditorAPI : realCodeEditorAPI;
+export const obdAPI = USE_MOCK ? mockApi.obdAPI : realObdAPI;
+export const dieselLaptopsAPI = USE_MOCK ? mockApi.dieselLaptopsAPI : realDieselLaptopsAPI;
 
 export default api;

@@ -14,6 +14,7 @@ import Technicians from './pages/Technicians';
 import AdminPanel from './pages/AdminPanel';
 import AdminCodeEditor from './pages/AdminCodeEditor';
 import IntegrationsPage from './pages/IntegrationsPage';
+import DieselLaptops from './pages/DieselLaptops';
 import WalkAround from './pages/ServiceLane/WalkAround';
 import OBDScanner from './pages/ServiceLane/OBDScanner';
 import OnlineScheduler from './pages/ServiceLane/OnlineScheduler';
@@ -54,6 +55,7 @@ function App() {
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/admin-code-editor" element={<AdminCodeEditor />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/diesel-laptops" element={<DieselLaptops />} />
             <Route path="/service-lane/walk-around" element={<WalkAround />} />
             <Route path="/service-lane/obd-scanner" element={<OBDScanner />} />
             <Route path="/service-lane/scheduler" element={<OnlineScheduler />} />

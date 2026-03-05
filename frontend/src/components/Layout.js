@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
-import { LayoutDashboard, Wrench, Users, CheckSquare, LogOut, Truck, Menu, User, Package, CreditCard, BarChart3, Shield, Plug, Camera, Scan, Calendar, ClipboardList, Target, FileBarChart, FileCode } from 'lucide-react';
+import { LayoutDashboard, Wrench, Users, CheckSquare, LogOut, Truck, Menu, User, Package, CreditCard, BarChart3, Shield, Plug, Camera, Scan, Calendar, ClipboardList, Target, FileBarChart, FileCode, Cpu } from 'lucide-react';
 import { useState } from 'react';
 
 const Layout = () => {
@@ -34,7 +34,8 @@ const Layout = () => {
     { path: '/approvals', icon: CheckSquare, label: 'Fleet Approvals', roles: ['fleet_manager', 'customer'] },
     { path: '/admin-panel', icon: Shield, label: 'Admin Panel', roles: ['admin'] },
     { path: '/admin-code-editor', icon: FileCode, label: 'Code Editor', roles: ['admin'] },
-    { path: '/integrations', icon: Plug, label: 'Integrations', roles: ['admin'] }
+    { path: '/integrations', icon: Plug, label: 'Integrations', roles: ['admin'] },
+    { path: '/diesel-laptops', icon: Cpu, label: 'Diesel Laptops', roles: ['admin', 'service_manager', 'technician'] }
   ];
 
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));

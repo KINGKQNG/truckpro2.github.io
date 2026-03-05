@@ -1,3 +1,4 @@
+import hashlib
 import os
 import uuid
 from datetime import datetime, timezone
@@ -1380,6 +1381,433 @@ async def create_ro_from_obd(
     return clean_doc(new_order)
 
 
+_DTC_DB: Dict[str, Any] = {
+    "SPN102FMI2": {
+        "code": "SPN 102 FMI 2",
+        "spn": 102,
+        "fmi": 2,
+        "description": "Boost Pressure – Data Erratic, Intermittent, or Incorrect",
+        "system": "Air Management",
+        "severity": "high",
+        "possibleCauses": [
+            "Faulty boost pressure sensor",
+            "Cracked or loose boost pressure hose",
+            "Leaking intercooler",
+            "Turbocharger failure",
+            "Wiring harness damage or corrosion",
+        ],
+        "recommendedActions": [
+            "Inspect boost pressure sensor connector and wiring",
+            "Check intercooler for cracks and leaks",
+            "Inspect turbocharger impeller and compressor wheel",
+            "Replace boost pressure sensor if voltage out of range",
+            "Perform boost leak test",
+        ],
+        "repairProcedures": [
+            {
+                "step": 1,
+                "description": "Connect diagnostic tool and monitor SPN 102 live data at idle and under load.",
+            },
+            {
+                "step": 2,
+                "description": "Inspect MAP/boost sensor connector for bent pins, corrosion, or moisture.",
+            },
+            {"step": 3, "description": "Measure sensor supply voltage (should be 5 V ± 0.2 V)."},
+            {"step": 4, "description": "Inspect boost hose from turbo to intercooler and intercooler to intake manifold."},
+            {"step": 5, "description": "Perform smoke test on intake/boost system to locate leaks."},
+            {"step": 6, "description": "Replace boost pressure sensor if faulty. Clear codes and retest."},
+        ],
+        "relatedCodes": ["SPN 27 FMI 5", "SPN 100 FMI 1", "SPN 94 FMI 1"],
+        "commonParts": [
+            {"partNumber": "A0041539228", "description": "Boost Pressure Sensor", "price": 89.95},
+            {"partNumber": "A9615400617", "description": "Boost Hose Assembly", "price": 54.50},
+        ],
+        "laborTime": 1.5,
+    },
+    "SPN27FMI5": {
+        "code": "SPN 27 FMI 5",
+        "spn": 27,
+        "fmi": 5,
+        "description": "EGR Valve Position Sensor – Current Below Normal",
+        "system": "Emissions / EGR",
+        "severity": "high",
+        "possibleCauses": [
+            "Open circuit in EGR position sensor signal wire",
+            "Faulty EGR position sensor",
+            "EGR valve actuator failure",
+            "ECM calibration issue",
+        ],
+        "recommendedActions": [
+            "Check EGR position sensor wiring for open circuit",
+            "Inspect EGR valve for carbon buildup",
+            "Clean or replace EGR valve",
+            "Update ECM software if applicable",
+        ],
+        "repairProcedures": [
+            {"step": 1, "description": "Inspect EGR valve and sensor connector for damage or corrosion."},
+            {"step": 2, "description": "Measure resistance on sensor signal wire (should not exceed 5 Ω)."},
+            {"step": 3, "description": "Remove EGR valve and inspect for excessive carbon fouling."},
+            {"step": 4, "description": "Clean EGR valve ports with approved solvent. Replace if severely fouled."},
+        ],
+        "relatedCodes": ["SPN 102 FMI 2", "SPN 412 FMI 3"],
+        "commonParts": [
+            {"partNumber": "A0001400560", "description": "EGR Valve Assembly", "price": 379.00},
+            {"partNumber": "A0051530228", "description": "EGR Position Sensor", "price": 67.50},
+        ],
+        "laborTime": 2.5,
+    },
+    "P0087": {
+        "code": "P0087",
+        "description": "Fuel Rail/System Pressure – Too Low",
+        "system": "Fuel System",
+        "severity": "critical",
+        "possibleCauses": [
+            "Clogged fuel filter",
+            "Weak or failing fuel transfer pump",
+            "High-pressure fuel pump wear",
+            "Restricted fuel supply line",
+            "Contaminated fuel",
+        ],
+        "recommendedActions": [
+            "Replace primary and secondary fuel filters",
+            "Test fuel transfer pump output pressure",
+            "Inspect fuel supply lines for kinks or blockage",
+            "Check fuel rail pressure sensor accuracy",
+            "Inspect injectors for excessive return flow",
+        ],
+        "repairProcedures": [
+            {"step": 1, "description": "Connect scan tool – record live fuel rail pressure at idle and under load."},
+            {"step": 2, "description": "Replace primary fuel filter; check for water in fuel."},
+            {"step": 3, "description": "Test transfer pump inlet restriction (max 4 in-Hg)."},
+            {"step": 4, "description": "Perform high-pressure pump flow test using OEM procedure."},
+            {"step": 5, "description": "Replace injectors if return flow exceeds spec. Clear codes and road test."},
+        ],
+        "relatedCodes": ["P0088", "P0193"],
+        "commonParts": [
+            {"partNumber": "F276200012060", "description": "Primary Fuel Filter", "price": 28.95},
+            {"partNumber": "A0000901551", "description": "Transfer Pump Assembly", "price": 312.00},
+        ],
+        "laborTime": 2.0,
+    },
+    "P0299": {
+        "code": "P0299",
+        "description": "Turbocharger/Supercharger A Underboost Condition",
+        "system": "Turbocharger",
+        "severity": "high",
+        "possibleCauses": [
+            "Boost leak in intake system",
+            "Variable geometry turbocharger vane issue",
+            "EGR valve stuck open",
+            "Air filter restriction",
+            "Charge air cooler core leak",
+        ],
+        "recommendedActions": [
+            "Perform boost leak test on entire intake system",
+            "Inspect and clean VGT actuator and vanes",
+            "Verify EGR valve operation",
+            "Check air filter restriction",
+            "Inspect charge air cooler for leaks",
+        ],
+        "repairProcedures": [
+            {"step": 1, "description": "Record boost pressure PID at rated RPM under full load."},
+            {"step": 2, "description": "Inspect all intercooler hose clamps and boots."},
+            {"step": 3, "description": "Perform smoke/pressure test at 20 psi on intake."},
+            {"step": 4, "description": "Inspect VGT actuator rod travel and clean vanes with approved cleaner."},
+            {"step": 5, "description": "Check EGR valve duty cycle; repair if stuck open."},
+        ],
+        "relatedCodes": ["SPN 102 FMI 2", "P0420"],
+        "commonParts": [
+            {"partNumber": "A0090960399", "description": "VGT Turbocharger Assembly", "price": 2450.00},
+            {"partNumber": "A9600900854", "description": "Charge Air Cooler", "price": 890.00},
+        ],
+        "laborTime": 4.0,
+    },
+    "P0420": {
+        "code": "P0420",
+        "description": "Catalyst System Efficiency Below Threshold (Bank 1)",
+        "system": "Aftertreatment / Emissions",
+        "severity": "medium",
+        "possibleCauses": [
+            "Failing or degraded DPF/DOC",
+            "Coolant or oil contamination of exhaust",
+            "Incorrect fuel sulfur content",
+            "Oxygen sensor malfunction",
+            "Exhaust system leaks ahead of DPF",
+        ],
+        "recommendedActions": [
+            "Check exhaust for leaks upstream of catalyst",
+            "Inspect downstream oxygen/NOx sensor",
+            "Review DEF quality and dosing rate",
+            "Perform forced DPF regeneration",
+            "Replace DOC/DPF if soot or ash loading excessive",
+        ],
+        "repairProcedures": [
+            {"step": 1, "description": "Check exhaust back-pressure and soot load via diagnostic tool."},
+            {"step": 2, "description": "Inspect for exhaust leaks between turbo and DPF."},
+            {"step": 3, "description": "Perform a parked DPF regeneration cycle."},
+            {"step": 4, "description": "Test NOx sensor upstream and downstream for correct readings."},
+            {"step": 5, "description": "Replace DPF/DOC if soot load exceeds manufacturer limit."},
+        ],
+        "relatedCodes": ["P2002", "P2463", "P228C"],
+        "commonParts": [
+            {"partNumber": "A0004900492", "description": "DOC/DPF Assembly", "price": 3200.00},
+            {"partNumber": "A0009053203", "description": "NOx Sensor", "price": 245.00},
+        ],
+        "laborTime": 3.5,
+    },
+    "SPN100FMI1": {
+        "code": "SPN 100 FMI 1",
+        "description": "Engine Oil Pressure – Data Valid But Below Normal Range",
+        "system": "Lubrication",
+        "severity": "critical",
+        "possibleCauses": [
+            "Low engine oil level",
+            "Worn oil pump",
+            "Clogged oil filter or pickup tube",
+            "Worn main or rod bearings",
+            "Oil pressure sensor failure",
+        ],
+        "recommendedActions": [
+            "STOP ENGINE IMMEDIATELY if pressure is critically low",
+            "Check engine oil level and condition",
+            "Replace oil filter",
+            "Inspect oil pressure sensor and circuit",
+            "Perform oil pump output test",
+        ],
+        "repairProcedures": [
+            {"step": 1, "description": "Check oil level and condition. Add oil if low; investigate source of loss."},
+            {"step": 2, "description": "Install mechanical oil pressure gauge to verify sensor accuracy."},
+            {"step": 3, "description": "Replace oil filter and check oil pickup tube for restriction."},
+            {"step": 4, "description": "Measure oil pump output pressure at warm idle (min 10 psi; spec ~40 psi)."},
+            {"step": 5, "description": "If low pressure confirmed, disassemble engine for bearing inspection."},
+        ],
+        "relatedCodes": ["SPN 110 FMI 0"],
+        "commonParts": [
+            {"partNumber": "A4721800009", "description": "Oil Pressure Sensor", "price": 45.00},
+            {"partNumber": "A4721840225", "description": "Oil Pump Assembly", "price": 580.00},
+        ],
+        "laborTime": 2.0,
+    },
+}
+
+_PARTS_DB: List[Dict[str, Any]] = [
+    {
+        "partNumber": "A0041539228",
+        "name": "Boost Pressure Sensor",
+        "category": "Sensors",
+        "make": ["Freightliner", "Peterbilt", "Kenworth"],
+        "oemNumbers": ["A0041539228", "5WK96841"],
+        "description": "MAP/Boost pressure sensor for DD15/DD13 engines",
+        "price": 89.95,
+        "availability": "in_stock",
+        "specifications": {"voltage": "5V", "thread": "M14x1.5", "connectorType": "3-pin Deutsch"},
+    },
+    {
+        "partNumber": "A0001400560",
+        "name": "EGR Valve Assembly",
+        "category": "Emissions",
+        "make": ["Freightliner", "Western Star"],
+        "oemNumbers": ["A0001400560", "OM471", "DD15-EGR"],
+        "description": "Complete EGR valve assembly for DD15 engine",
+        "price": 379.00,
+        "availability": "in_stock",
+        "specifications": {"voltage": "12V", "flowRate": "600 kg/hr"},
+    },
+    {
+        "partNumber": "F276200012060",
+        "name": "Primary Fuel Filter",
+        "category": "Filters",
+        "make": ["Freightliner", "Peterbilt", "Kenworth", "Volvo", "Mack"],
+        "oemNumbers": ["F276200012060", "WF10128", "FS20126"],
+        "description": "Primary/pre-filter for HPCR fuel system",
+        "price": 28.95,
+        "availability": "in_stock",
+        "specifications": {"micron": "10", "bypassValve": "25 PSI", "waterSeparator": True},
+    },
+    {
+        "partNumber": "A0090960399",
+        "name": "VGT Turbocharger Assembly – Remanufactured",
+        "category": "Turbocharger",
+        "make": ["Freightliner", "Western Star"],
+        "oemNumbers": ["A0090960399", "BW174357"],
+        "description": "Variable geometry turbocharger for DD15, remanufactured with 2-year warranty",
+        "price": 2450.00,
+        "availability": "limited",
+        "specifications": {"compressorInducer": "72mm", "turbineWheel": "80mm", "type": "VGT"},
+    },
+    {
+        "partNumber": "A0004900492",
+        "name": "DPF/DOC Aftertreatment Assembly",
+        "category": "Aftertreatment",
+        "make": ["Freightliner", "Western Star"],
+        "oemNumbers": ["A0004900492"],
+        "description": "Complete diesel particulate filter and diesel oxidation catalyst assembly",
+        "price": 3200.00,
+        "availability": "order",
+        "specifications": {"substrate": "Cordierite", "inlet": "5-inch"},
+    },
+    {
+        "partNumber": "K152765",
+        "name": "Wheel Seal – Rear Drive Axle",
+        "category": "Drivetrain",
+        "make": ["Peterbilt", "Kenworth", "Freightliner", "International"],
+        "oemNumbers": ["K152765", "71220", "SKF-32407"],
+        "description": "Unitized wheel seal for Dana/Spicer rear drive axle",
+        "price": 42.50,
+        "availability": "in_stock",
+        "specifications": {"innerDiameter": "3.376 in", "outerDiameter": "4.875 in"},
+    },
+    {
+        "partNumber": "WA10510",
+        "name": "Coolant/Water Pump",
+        "category": "Cooling",
+        "make": ["Peterbilt", "Kenworth"],
+        "oemNumbers": ["WA10510", "Q21-1075", "E600-6205"],
+        "description": "Engine coolant pump for PACCAR MX-13",
+        "price": 318.00,
+        "availability": "in_stock",
+        "specifications": {"flowRate": "100 GPM", "pulleyDiameter": "6.5 in"},
+    },
+    {
+        "partNumber": "21707132",
+        "name": "Injector – Unit (Remanufactured)",
+        "category": "Fuel System",
+        "make": ["Volvo", "Mack"],
+        "oemNumbers": ["21707132", "22171491", "E3.18"],
+        "description": "Reman unit injector for Volvo D13 / Mack MP8 engine",
+        "price": 425.00,
+        "availability": "in_stock",
+        "specifications": {"sprayHoles": 8, "pressure": "1800 bar"},
+    },
+]
+
+_WIRING_SYSTEMS: Dict[str, Any] = {
+    "engine": {
+        "system": "Engine Management",
+        "circuits": [
+            {"circuit": "ECM Power Supply", "wireColor": "Red/White", "gauge": "12 AWG", "connectorType": "Deutsch DT"},
+            {"circuit": "ECM Ground", "wireColor": "Black", "gauge": "12 AWG", "connectorType": "Deutsch DT"},
+            {"circuit": "CAN H (J1939)", "wireColor": "Yellow", "gauge": "18 AWG", "connectorType": "9-pin Deutsch"},
+            {"circuit": "CAN L (J1939)", "wireColor": "Green", "gauge": "18 AWG", "connectorType": "9-pin Deutsch"},
+            {"circuit": "Boost Pressure Signal", "wireColor": "Orange", "gauge": "20 AWG", "connectorType": "3-pin Packard"},
+            {"circuit": "Coolant Temp Signal", "wireColor": "Pink", "gauge": "20 AWG", "connectorType": "2-pin Packard"},
+        ],
+        "pinLayouts": [
+            {"connector": "ECM J1 (120-pin)", "pins": [
+                {"pin": "A1", "function": "Battery +12V", "color": "Red"},
+                {"pin": "A2", "function": "Battery Ground", "color": "Black"},
+                {"pin": "B5", "function": "CAN High", "color": "Yellow"},
+                {"pin": "B6", "function": "CAN Low", "color": "Green"},
+                {"pin": "C10", "function": "Boost Pressure Signal", "color": "Orange"},
+            ]},
+        ],
+    },
+    "brakes": {
+        "system": "Air Brake System",
+        "circuits": [
+            {"circuit": "ABS Module Power", "wireColor": "Red", "gauge": "14 AWG", "connectorType": "Packard 56"},
+            {"circuit": "ABS Module Ground", "wireColor": "Black", "gauge": "14 AWG", "connectorType": "Packard 56"},
+            {"circuit": "Wheel Speed Sensor FL", "wireColor": "Brown/White", "gauge": "18 AWG", "connectorType": "2-pin AMP"},
+            {"circuit": "Wheel Speed Sensor RR", "wireColor": "Gray/White", "gauge": "18 AWG", "connectorType": "2-pin AMP"},
+            {"circuit": "J1939 CAN H", "wireColor": "Yellow", "gauge": "18 AWG", "connectorType": "9-pin Deutsch"},
+        ],
+        "pinLayouts": [
+            {"connector": "ABS ECU (36-pin)", "pins": [
+                {"pin": "1", "function": "Battery +12V", "color": "Red"},
+                {"pin": "2", "function": "Ignition Power", "color": "Orange"},
+                {"pin": "3", "function": "Ground", "color": "Black"},
+                {"pin": "10", "function": "WSS FL +", "color": "Brown"},
+                {"pin": "11", "function": "WSS FL –", "color": "White/Brown"},
+            ]},
+        ],
+    },
+    "electrical": {
+        "system": "Chassis Electrical",
+        "circuits": [
+            {"circuit": "Main Battery Feed", "wireColor": "Red", "gauge": "2/0 AWG", "connectorType": "Bolt-on lug"},
+            {"circuit": "Alternator Output", "wireColor": "Orange", "gauge": "4 AWG", "connectorType": "Ring terminal"},
+            {"circuit": "Ignition Switch", "wireColor": "Yellow/Red", "gauge": "16 AWG", "connectorType": "Packard"},
+            {"circuit": "Lighting Bus", "wireColor": "Blue", "gauge": "16 AWG", "connectorType": "Deutsch"},
+        ],
+        "pinLayouts": [],
+    },
+    "transmission": {
+        "system": "Transmission Control",
+        "circuits": [
+            {"circuit": "TCM Power Supply", "wireColor": "Red/Purple", "gauge": "14 AWG", "connectorType": "Deutsch DT"},
+            {"circuit": "TCM Ground", "wireColor": "Black", "gauge": "14 AWG", "connectorType": "Deutsch DT"},
+            {"circuit": "Output Shaft Speed", "wireColor": "Tan", "gauge": "20 AWG", "connectorType": "2-pin Packard"},
+            {"circuit": "TPS Signal", "wireColor": "Green/White", "gauge": "20 AWG", "connectorType": "3-pin Packard"},
+        ],
+        "pinLayouts": [],
+    },
+    "hvac": {
+        "system": "HVAC / Climate Control",
+        "circuits": [
+            {"circuit": "Compressor Clutch", "wireColor": "Blue/White", "gauge": "16 AWG", "connectorType": "Packard"},
+            {"circuit": "Blower Motor", "wireColor": "Purple", "gauge": "14 AWG", "connectorType": "2-pin Packard"},
+            {"circuit": "Temp Sensor Signal", "wireColor": "Green", "gauge": "20 AWG", "connectorType": "2-pin Packard"},
+        ],
+        "pinLayouts": [],
+    },
+}
+
+_TSB_DB: List[Dict[str, Any]] = [
+    {
+        "bulletinNumber": "TSB-DD15-2023-041",
+        "title": "DD15 – EGR Valve Carbon Deposit Procedure",
+        "date": "2023-08-14",
+        "make": "Freightliner",
+        "model": "Cascadia",
+        "system": "Emissions",
+        "description": "Carbon buildup on EGR valve disc and seat may cause SPN 27 FMI 5/7 or rough idle. This bulletin provides a cleaning and inspection procedure before replacement.",
+        "affectedComponents": ["EGR Valve", "EGR Cooler", "Intake Manifold"],
+        "affectedSerialRange": "DD15 serial 471xxxxx built before 2023-06-01",
+        "laborTime": 2.5,
+        "partsRequired": [{"partNumber": "A0001400560", "qty": 1}],
+    },
+    {
+        "bulletinNumber": "TSB-MX13-2022-019",
+        "title": "PACCAR MX-13 – Injector Return Banjo Bolt Torque Revision",
+        "date": "2022-05-22",
+        "make": "Kenworth",
+        "model": "T680",
+        "system": "Fuel System",
+        "description": "Incorrect torque specification in prior service manual. Torque for injector return banjo bolt revised from 22 Nm to 18 Nm to prevent cracking of banjo fitting.",
+        "affectedComponents": ["Fuel Injectors", "High-Pressure Lines"],
+        "affectedSerialRange": "MX-13 engines built 2019-2022",
+        "laborTime": 1.0,
+        "partsRequired": [],
+    },
+    {
+        "bulletinNumber": "TSB-DPF-2024-007",
+        "title": "SCR System – DEF Dosing Valve Replacement Program",
+        "date": "2024-01-10",
+        "make": "All",
+        "model": "All",
+        "system": "Aftertreatment",
+        "description": "Extended idle or low-load operation may result in DEF dosing valve crystallization leading to P20EE or SPN 4094 FMI codes. This bulletin authorizes replacement under extended warranty.",
+        "affectedComponents": ["DEF Dosing Valve", "SCR Catalyst", "DEF Supply Module"],
+        "affectedSerialRange": "All EPA2017+ engines",
+        "laborTime": 1.5,
+        "partsRequired": [{"partNumber": "A0009018735", "qty": 1}],
+    },
+    {
+        "bulletinNumber": "TSB-ABS-2023-012",
+        "title": "Meritor ABS – Wheel Speed Sensor Air Gap Spec Update",
+        "date": "2023-03-30",
+        "make": "All",
+        "model": "All",
+        "system": "Brakes",
+        "description": "Service manual air gap spec updated from 0.020–0.040 in to 0.015–0.035 in for improved ABS response at low speeds. Applies to Meritor EX+L brake assembly.",
+        "affectedComponents": ["Wheel Speed Sensors", "ABS Module"],
+        "affectedSerialRange": "All vehicles with Meritor EX+L brakes",
+        "laborTime": 0.5,
+        "partsRequired": [],
+    },
+]
+
+
 @app.get("/api/diesel-laptops/dtc")
 async def diesel_dtc_lookup(
     code: str,
@@ -1387,13 +1815,35 @@ async def diesel_dtc_lookup(
     model: Optional[str] = None,
     _: Dict[str, Any] = Depends(get_current_user),
 ) -> Dict[str, Any]:
+    key = code.upper().replace(" ", "").replace("-", "").replace("/", "")
+    record = _DTC_DB.get(key)
+    if record:
+        result = dict(record)
+        result["make"] = make
+        result["model"] = model
+        return result
     return {
         "code": code,
         "make": make,
         "model": model,
-        "description": "Diesel Laptops connector is configured with simulated data",
-        "severity": "warning",
-        "recommendedActions": ["Inspect wiring harness", "Run pin test", "Re-scan after repair"],
+        "description": f"Fault code {code} – sensor or circuit fault detected",
+        "system": "Unknown",
+        "severity": "medium",
+        "possibleCauses": ["Faulty sensor", "Wiring harness damage", "Connector corrosion", "Component failure"],
+        "recommendedActions": [
+            "Inspect related sensor connector and wiring",
+            "Check for chafed or open wires",
+            "Replace sensor if voltage out of specification",
+            "Re-scan after repair to confirm code is cleared",
+        ],
+        "repairProcedures": [
+            {"step": 1, "description": "Connect diagnostic tool and record live data for related PIDs."},
+            {"step": 2, "description": "Inspect wiring harness for damage or corrosion."},
+            {"step": 3, "description": "Replace faulty component and clear codes."},
+        ],
+        "relatedCodes": [],
+        "commonParts": [],
+        "laborTime": 1.0,
     }
 
 
@@ -1403,11 +1853,192 @@ async def diesel_parts_search(
     make: Optional[str] = None,
     _: Dict[str, Any] = Depends(get_current_user),
 ) -> Dict[str, Any]:
+    term = q.lower()
+    filtered = [
+        p for p in _PARTS_DB
+        if term in p["name"].lower()
+        or term in p["partNumber"].lower()
+        or term in p["category"].lower()
+        or any(term in oem.lower() for oem in p["oemNumbers"])
+    ]
+    if make:
+        filtered = [p for p in filtered if make in p.get("make", [])] or filtered
+    if not filtered:
+        _h = int(hashlib.md5(q.encode()).hexdigest(), 16)
+        filtered = [
+            {
+                "partNumber": f"DL-{_h % 9000 + 1000}",
+                "name": f"{q.title()} Assembly",
+                "category": "General",
+                "make": [make or "All"],
+                "oemNumbers": [],
+                "description": f"OEM replacement {q} assembly",
+                "price": round(50 + _h % 450, 2),
+                "availability": "order",
+                "specifications": {},
+            }
+        ]
+    return {"query": q, "make": make, "results": filtered}
+
+
+@app.get("/api/diesel-laptops/wiring")
+async def diesel_wiring_diagram(
+    vin: str,
+    system: str,
+    _: Dict[str, Any] = Depends(get_current_user),
+) -> Dict[str, Any]:
+    system_key = system.lower().replace(" ", "_")
+    diagram = _WIRING_SYSTEMS.get(system_key, _WIRING_SYSTEMS.get("engine"))
     return {
-        "query": q,
-        "make": make,
-        "results": [
-            {"partNumber": "DL-1001", "name": f"{q} sensor", "price": 145.0, "availability": "in_stock"},
-            {"partNumber": "DL-1002", "name": f"{q} harness", "price": 79.0, "availability": "limited"},
-        ],
+        "vin": vin,
+        "system": system,
+        **diagram,
+    }
+
+
+@app.get("/api/diesel-laptops/tsb")
+async def diesel_tsb_lookup(
+    make: Optional[str] = None,
+    model: Optional[str] = None,
+    year: Optional[int] = None,
+    _: Dict[str, Any] = Depends(get_current_user),
+) -> Dict[str, Any]:
+    results = _TSB_DB
+    if make:
+        results = [t for t in results if t["make"] in (make, "All")]
+    if model:
+        results = [t for t in results if t["model"] in (model, "All")]
+    return {"make": make, "model": model, "year": year, "bulletins": results}
+
+
+@app.get("/api/diesel-laptops/maintenance")
+async def diesel_maintenance_schedule(
+    vin: str,
+    mileage: int,
+    _: Dict[str, Any] = Depends(get_current_user),
+) -> Dict[str, Any]:
+    services = [
+        {
+            "service": "Engine Oil & Filter Change",
+            "description": "Drain and refill engine oil; replace oil filter",
+            "interval": 25000,
+            "dueMileage": ((mileage // 25000) + 1) * 25000,
+            "overdue": mileage % 25000 > 23000,
+            "partsNeeded": [
+                {"partNumber": "F276200012060", "description": "Oil Filter", "qty": 1},
+            ],
+            "estimatedCost": 185.0,
+            "laborTime": 0.8,
+        },
+        {
+            "service": "Fuel Filter Replacement (Primary & Secondary)",
+            "description": "Replace primary water-separator/pre-filter and secondary fuel filter",
+            "interval": 25000,
+            "dueMileage": ((mileage // 25000) + 1) * 25000,
+            "overdue": mileage % 25000 > 23000,
+            "partsNeeded": [
+                {"partNumber": "F276200012060", "description": "Primary Fuel Filter", "qty": 1},
+                {"partNumber": "F276200012061", "description": "Secondary Fuel Filter", "qty": 1},
+            ],
+            "estimatedCost": 120.0,
+            "laborTime": 0.5,
+        },
+        {
+            "service": "Air Filter Service",
+            "description": "Inspect and replace engine air filter element",
+            "interval": 50000,
+            "dueMileage": ((mileage // 50000) + 1) * 50000,
+            "overdue": mileage % 50000 > 48000,
+            "partsNeeded": [
+                {"partNumber": "A0040940004", "description": "Air Filter Element", "qty": 1},
+            ],
+            "estimatedCost": 95.0,
+            "laborTime": 0.5,
+        },
+        {
+            "service": "Coolant System Flush",
+            "description": "Flush and refill cooling system with OAT coolant; inspect hoses and clamps",
+            "interval": 300000,
+            "dueMileage": ((mileage // 300000) + 1) * 300000,
+            "overdue": mileage % 300000 > 295000,
+            "partsNeeded": [],
+            "estimatedCost": 350.0,
+            "laborTime": 2.0,
+        },
+        {
+            "service": "DPF Inspection & Cleaning",
+            "description": "Inspect diesel particulate filter soot and ash load; clean if necessary",
+            "interval": 200000,
+            "dueMileage": ((mileage // 200000) + 1) * 200000,
+            "overdue": mileage % 200000 > 195000,
+            "partsNeeded": [],
+            "estimatedCost": 450.0,
+            "laborTime": 3.0,
+        },
+        {
+            "service": "Brake System Inspection",
+            "description": "Measure brake lining thickness, drum/rotor condition, slack adjuster travel",
+            "interval": 50000,
+            "dueMileage": ((mileage // 50000) + 1) * 50000,
+            "overdue": mileage % 50000 > 48000,
+            "partsNeeded": [],
+            "estimatedCost": 200.0,
+            "laborTime": 1.5,
+        },
+        {
+            "service": "Wheel End / Bearing Inspection",
+            "description": "Inspect front and rear wheel bearings for play and seal leaks",
+            "interval": 100000,
+            "dueMileage": ((mileage // 100000) + 1) * 100000,
+            "overdue": mileage % 100000 > 98000,
+            "partsNeeded": [],
+            "estimatedCost": 300.0,
+            "laborTime": 2.0,
+        },
+    ]
+    return {
+        "vin": vin,
+        "currentMileage": mileage,
+        "recommendedServices": services,
+        "nextServiceDue": min(s["dueMileage"] for s in services),
+    }
+
+
+@app.get("/api/diesel-laptops/fleet-scan")
+async def diesel_fleet_scan(
+    _: Dict[str, Any] = Depends(get_current_user),
+    db_conn: AsyncIOMotorDatabase = Depends(get_db),
+) -> Dict[str, Any]:
+    trucks = await db_conn.trucks.find({}, {"_id": 0}).to_list(100)
+    results = []
+    mock_dtcs = [
+        {"code": "SPN 102 FMI 2", "description": "Boost Pressure – Data Erratic", "severity": "high"},
+        {"code": "P0087", "description": "Fuel Rail Pressure Too Low", "severity": "critical"},
+        {"code": "P0420", "description": "Catalyst System Efficiency Below Threshold", "severity": "medium"},
+    ]
+    for idx, truck in enumerate(trucks):
+        active_codes = mock_dtcs[: idx % 4] if idx % 3 != 0 else []
+        results.append(
+            {
+                "unitNumber": truck.get("unitNumber", f"UNIT-{idx + 1}"),
+                "vin": truck.get("vin", "1HGCM82633A004352"),
+                "make": truck.get("make", "Unknown"),
+                "model": truck.get("model", "Unknown"),
+                "year": truck.get("year", 2020),
+                "mileage": truck.get("mileage", 350000),
+                "activeDTCs": active_codes,
+                "dtcCount": len(active_codes),
+                "status": "critical" if any(c["severity"] == "critical" for c in active_codes)
+                else "warning" if active_codes
+                else "ok",
+                "lastScanned": now_iso(),
+            }
+        )
+    return {
+        "scannedAt": now_iso(),
+        "totalVehicles": len(results),
+        "criticalCount": sum(1 for r in results if r["status"] == "critical"),
+        "warningCount": sum(1 for r in results if r["status"] == "warning"),
+        "okCount": sum(1 for r in results if r["status"] == "ok"),
+        "vehicles": results,
     }

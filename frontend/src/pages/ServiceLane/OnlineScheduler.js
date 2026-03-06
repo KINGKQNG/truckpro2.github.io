@@ -17,9 +17,13 @@ const OnlineScheduler = () => {
   const [date, setDate] = useState(new Date());
   const [appointments, setAppointments] = useState([]);
   const [technicians, setTechnicians] = useState([]);
+  const [vinLookupLoading, setVinLookupLoading] = useState(false);
   const [appointmentData, setAppointmentData] = useState({
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
+    vin: '',
     mileage: '',
     services: [],
     time: '',
@@ -112,6 +116,23 @@ const OnlineScheduler = () => {
     }, 0);
   };
 
+  // Simulate CDK/eleads VIN lookup — auto-populates vehicle info
+  const handleVinLookup = () => {
+    if (!appointmentData.vin || appointmentData.vin.length < 5) {
+      toast({ title: 'Enter a VIN', description: 'Please enter at least a partial VIN to look up.', variant: 'destructive' });
+      return;
+    }
+    setVinLookupLoading(true);
+    setTimeout(() => {
+      setVinLookupLoading(false);
+      toast({
+        title: 'Vehicle Found',
+        description: '2021 Peterbilt 579 — 1XKAD49X0CJ123457 — 248,000 mi'
+      });
+      setAppointmentData(prev => ({ ...prev, mileage: '248000' }));
+    }, 900);
+  };
+
   const handleSubmit = async () => {
     try {
       await appointmentsAPI.create({
@@ -173,9 +194,32 @@ const OnlineScheduler = () => {
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
+            <CardTitle>Customer &amp; Vehicle Check-In</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Customer name — eleads/CDK check-in style */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>First Name</Label>
+                <Input
+                  data-testid="scheduler-first-name-input"
+                  type="text"
+                  value={appointmentData.firstName}
+                  onChange={(e) => setAppointmentData(prev => ({ ...prev, firstName: e.target.value }))}
+                  placeholder="First name"
+                />
+              </div>
+              <div>
+                <Label>Last Name</Label>
+                <Input
+                  data-testid="scheduler-last-name-input"
+                  type="text"
+                  value={appointmentData.lastName}
+                  onChange={(e) => setAppointmentData(prev => ({ ...prev, lastName: e.target.value }))}
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Email Address</Label>
@@ -196,6 +240,31 @@ const OnlineScheduler = () => {
                   onChange={(e) => setAppointmentData(prev => ({ ...prev, phone: e.target.value }))}
                   placeholder="(555) 123-4567"
                 />
+              </div>
+            </div>
+            {/* VIN Lookup — CDK eAdvisor / eleads service lane style */}
+            <div>
+              <Label>VIN (Vehicle Identification Number)</Label>
+              <div className="flex gap-2">
+                <Input
+                  data-testid="scheduler-vin-input"
+                  type="text"
+                  value={appointmentData.vin}
+                  onChange={(e) => setAppointmentData(prev => ({ ...prev, vin: e.target.value.toUpperCase() }))}
+                  placeholder="Enter VIN to auto-populate vehicle info"
+                  className="font-mono"
+                  maxLength={17}
+                />
+                <Button
+                  data-testid="scheduler-vin-lookup-button"
+                  type="button"
+                  variant="outline"
+                  onClick={handleVinLookup}
+                  disabled={vinLookupLoading}
+                  className="whitespace-nowrap"
+                >
+                  {vinLookupLoading ? 'Looking up...' : 'VIN Lookup'}
+                </Button>
               </div>
             </div>
             <div>
@@ -425,6 +494,25 @@ const OnlineScheduler = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Customer</p>
+                <p className="font-semibold">{appointmentData.firstName} {appointmentData.lastName}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Phone / Email</p>
+                <p className="font-semibold text-sm">{appointmentData.phone}</p>
+                <p className="text-xs text-gray-500">{appointmentData.email}</p>
+              </div>
+              {appointmentData.vin && (
+                <div>
+                  <p className="text-sm text-gray-600">VIN</p>
+                  <p className="font-semibold font-mono text-sm">{appointmentData.vin}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm text-gray-600">Mileage</p>
+                <p className="font-semibold">{appointmentData.mileage ? Number(appointmentData.mileage).toLocaleString() + ' mi' : '—'}</p>
+              </div>
               <div>
                 <p className="text-sm text-gray-600">Date</p>
                 <p className="font-semibold">{date.toLocaleDateString()}</p>

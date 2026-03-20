@@ -126,7 +126,11 @@ const realObdAPI = {
 
 const realDieselLaptopsAPI = {
   lookupDTC: (code, make, model) => api.get('/diesel-laptops/dtc', { params: { code, make, model } }),
-  searchParts: (search, make) => api.get('/diesel-laptops/parts/search', { params: { q: search, make } })
+  searchParts: (search, make) => api.get('/diesel-laptops/parts/search', { params: { q: search, make } }),
+  getWiringDiagram: (vin, system) => api.get('/diesel-laptops/wiring', { params: { vin, system } }),
+  getTSBs: (make, model, year) => api.get('/diesel-laptops/tsb', { params: { make, model, year } }),
+  getMaintenanceSchedule: (vin, mileage) => api.get('/diesel-laptops/maintenance', { params: { vin, mileage } }),
+  fleetScan: () => api.get('/diesel-laptops/fleet-scan'),
 };
 
 // ── Conditional exports ───────────────────────────────────────────────────────
